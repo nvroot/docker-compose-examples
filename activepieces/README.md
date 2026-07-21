@@ -1,6 +1,11 @@
 # Activepieces
+
+<p align="left">
+  <img src="../logo/activepieces.svg" width="100" height="100">
+</p>
+
 <p>
-<img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/activepieces.png" width="100" height="100">
+
 </p>
 
 | Name | Description |

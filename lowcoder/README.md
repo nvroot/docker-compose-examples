@@ -1,8 +1,9 @@
 # Lowcoder
 
 <p align="left">
-  <img src="https://avatars.githubusercontent.com/u/132206721?s=200&v=4" width="100" height="100">
+  <img src="../logo/lowcoder.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|

@@ -1,8 +1,9 @@
 # Opengist
 
 <p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/opengist.png" width="100" height="100">
+  <img src="../logo/opengist.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|

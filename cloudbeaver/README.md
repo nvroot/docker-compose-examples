@@ -1,8 +1,9 @@
 # Cloudbeaver
 
 <p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/cloudbeaver-light.png" width="100" height="100">
+  <img src="../logo/cloudbeaver.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|
@@ -13,4 +14,3 @@
 | **Registry** |    https://hub.docker.com/r/dbeaver/cloudbeaver   |
 | **Source&nbsp;Code&nbsp;** |   https://github.com/dbeaver/cloudbeaver  |
 | **Port** |    8978   |
-

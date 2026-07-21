@@ -1,8 +1,9 @@
 # Open WebUI
 
 <p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/openwebui.png" width="100" height="100">
+  <img src="../logo/open-webui-light.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|

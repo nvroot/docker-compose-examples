@@ -1,8 +1,9 @@
 # Crawl4AI
 
 <p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/crawl4ai.png" width="100" height="100">
+  <img src="../logo/crawl4ai.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|

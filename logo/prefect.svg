@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300px" height="300px" viewBox="0 0 300 300" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>prefect</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="prefect">
+            <rect id="Box" fill="#222222" x="0" y="0" width="300" height="300" rx="40"></rect>
+            <polygon id="Path" fill="#E5E8ED" fill-rule="nonzero" points="148.952269 190.658572 68 149 68 232.366253 68.0477987 232.341428 149 274 149 190.633747"></polygon>
+            <polygon id="Path" fill="#E5E8ED" fill-rule="nonzero" points="68 65.7589855 148.499461 107.517993 148.500539 191 228.974665 149.254131 229 149.267106 229 65.749362 228.989758 65.7544982 148.499461 24"></polygon>
+        </g>
+    </g>
+</svg>

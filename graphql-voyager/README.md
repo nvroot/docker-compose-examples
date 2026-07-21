@@ -1,20 +1,15 @@
-# <img src="../../../private-assets/key-white.svg" width=30 valign="middle"> [graphql-voyager](./README.md)
+# GraphQL Voyager
 
-**🔖**&nbsp;&nbsp;:&nbsp; `Tags` |<!--
--->&nbsp; `Tag` |<!--
--->&nbsp;
+<p align="left">
+  <img src="../logo/graphqlvoyager.svg" width="100" height="100">
+</p>
 
----
-
-| Name | Cats | Tags | URL | Notes |
-|------|:----:|:----:|-----|-------|
-| — | — | — | — | — |
-
-
-<!--  
-| [name](./dev/name.md) | <img src="../../../static-assets/logo/html.svg" width=24> | `tag` | [URL](https://test.com/) | Notes |
- -->
-
-<!--  
-| — | — | — | — | — | — | — | — | — |
- -->
+| Name | Description |
+|----------------|--------|
+| **Used Image** |   nvroot/voyager:latest   |
+| **Description** |  —  |
+| **Website** | —    |
+| **Docs** |    —    |
+| **Registry** |    https://hub.docker.com/r/nvroot/voyager   |
+| **Source&nbsp;Code&nbsp;** |   —  |
+| **Port** |    9090   |

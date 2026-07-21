@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="238px" height="238px" viewBox="0 0 238 238" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>bolt-diy</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="bolt-diy" fill-rule="nonzero">
+            <path d="M29.75,0 L208.25,0 C224.658984,0 238,13.3410156 238,29.75 L238,208.25 C238,224.658984 224.658984,238 208.25,238 L29.75,238 C13.3410156,238 0,224.658984 0,208.25 L0,29.75 C0,13.3410156 13.3410156,0 29.75,0" id="Path" fill="#8A5FFF"></path>
+            <polygon id="Path" fill="#FFFFFF" points="110.056801 135.76849 57 135.76849 154.03139 30 127.896861 103.23151 181 103.23151 83.9686099 209"></polygon>
+        </g>
+    </g>
+</svg>

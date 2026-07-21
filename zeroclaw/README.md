@@ -1,5 +1,10 @@
 # Zeroclaw 🦀
 
+<p align="left">
+  <img src="../logo/nvroot-dark.svg" width="100" height="100">
+</p>
+
+
 | Name | Description |
 |----------------|--------|
 | **Used Image** |   ghcr.io/zeroclaw-labs/zeroclaw:latest   |

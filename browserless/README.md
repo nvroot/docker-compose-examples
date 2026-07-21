@@ -1,8 +1,9 @@
 # Browserless
 
 <p align="left">
-  <img src="https://avatars.githubusercontent.com/u/51244358?s=200&v=4" width="100" height="100">
+  <img src="../logo/nvroot-dark.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|

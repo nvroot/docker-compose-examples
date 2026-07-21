@@ -1,20 +1,15 @@
-# <img src="../../../private-assets/folder-green.svg" width=30 valign="middle"> [filebrowser](./README.md)
+# File Browser
 
-**🔖**&nbsp;&nbsp;:&nbsp; `Tags` |<!--
--->&nbsp; `Tag` |<!--
--->&nbsp;
+<p align="left">
+  <img src="../logo/nvroot-dark.svg" width="100" height="100">
+</p>
 
----
-
-| Name | Cats | Tags | URL | Notes |
-|------|:----:|:----:|-----|-------|
-| — | — | — | — | — |
-
-
-<!--  
-| [name](./dev/name.md) | <img src="../../../static-assets/logo/html.svg" width=24> | `tag` | [URL](https://test.com/) | Notes |
- -->
-
-<!--  
-| — | — | — | — | — | — | — | — | — |
- -->
+| Name | Description |
+|----------------|--------|
+| **Used Image** |   gtstef/filebrowser:beta   |
+| **Description** |  —  |
+| **Website** | —    |
+| **Docs** |    —    |
+| **Registry** |    https://hub.docker.com/r/gtstef/filebrowser   |
+| **Source&nbsp;Code&nbsp;** |   —  |
+| **Port** |    80   |

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="361px" height="361px" viewBox="0 0 361 361" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>dark</title>
+    <defs>
+        <linearGradient x1="12.186513%" y1="-2.09848721e-05%" x2="111.187361%" y2="12.1294156%" id="linearGradient-1">
+            <stop stop-color="#FFCC19" offset="0%"></stop>
+            <stop stop-color="#2ECDF7" offset="58.5938%"></stop>
+            <stop stop-color="#9E7BFF" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="14.350391%" y1="-2.09848721e-05%" x2="74.7377305%" y2="4.48542408%" id="linearGradient-2">
+            <stop stop-color="#FFCC19" offset="0%"></stop>
+            <stop stop-color="#2ECDF7" offset="58.5938%"></stop>
+            <stop stop-color="#9E7BFF" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="14.6725642%" y1="-4.19697442e-05%" x2="49.3758445%" y2="12.1294156%" id="linearGradient-3">
+            <stop stop-color="#FFCC19" offset="0%"></stop>
+            <stop stop-color="#2ECDF7" offset="58.5938%"></stop>
+            <stop stop-color="#9E7BFF" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="dark" transform="translate(0.0929, 0.25)">
+            <g id="Group" transform="translate(15, 56)">
+                <path d="M129.8441,1.42108547e-14 L205.3521,1.42108547e-14 L205.3521,93.6288 L254.2401,1.42108547e-14 L329.7681,1.42108547e-14 L329.7681,248.677 L252.2091,248.677 L252.2091,154.982 L203.3021,248.647 L127.7781,248.677 L127.7911,155.025 L78.8918,248.677 L0,248.677 L129.8441,1.42108547e-14 Z M132.9991,133.805 L132.9851,243.471 L200.1461,243.444 L257.4141,133.766 L257.4141,243.471 L324.5621,243.471 L324.5621,5.2041 L257.3941,5.2041 L200.1461,114.844 L200.1471,5.2041 L132.9991,5.2041 L8.58922,243.471 L75.7373,243.471 L132.9991,133.805 L132.9991,133.805 Z" id="Shape" fill="#000000"></path>
+                <polygon id="Path" fill="url(#linearGradient-1)" fill-rule="nonzero" points="200.1471 5.20312 132.9991 5.20312 8.58911 243.47 75.7373 243.47 132.9991 133.804 132.9991 243.47 200.1461 243.47 200.1461 5.20453"></polygon>
+                <polygon id="Path" fill="url(#linearGradient-2)" fill-rule="nonzero" opacity="0.4" points="257.3941 5.20312 324.5421 5.20312 200.1321 243.47 132.9841 243.47"></polygon>
+                <polygon id="Path" fill="url(#linearGradient-3)" fill-rule="nonzero" points="257.4141 5.20312 324.5621 5.20312 324.5621 243.47 257.4141 243.47"></polygon>
+            </g>
+            <rect id="Rectangle" x="0" y="0" width="360" height="360"></rect>
+        </g>
+    </g>
+</svg>

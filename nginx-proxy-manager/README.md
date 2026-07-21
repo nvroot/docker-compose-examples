@@ -1,8 +1,9 @@
 # Nginx Proxy Manager
 
 <p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/nginx-proxy-manager.png" width="100" height="100">
+  <img src="../logo/nginx-proxy-manager.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|

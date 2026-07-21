@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="162px" height="162px" viewBox="0 0 162 162" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>mobsf</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="mobsf">
+            <circle id="Oval" stroke="#FFFFFF" stroke-width="5" cx="81" cy="81" r="78.5"></circle>
+            <g id="Group" transform="translate(36.6752, 33.8369)">
+                <polyline id="Path" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" points="63.1969535 44.2134718 76.5311817 44.2134718 89.1969535 60.2134718"></polyline>
+                <polyline id="Path-2" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" points="26.7192783 93.8107845 20.7192783 73.6111399 28.5874267 63.1113108"></polyline>
+                <polyline id="Path-3" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" points="-1.00939762e-14 45.7568855 11.0618688 56.7585984 31.4984046 50.2326427 49.5071405 40.2441113 67.8717041 26.6642089 65.7832741 11.0571674"></polyline>
+                <path d="M26.1813533,36.0166291 C40.3249416,34.0118673 50.8043281,35.7225448 57.6195127,41.1486617 C67.8422896,49.287837 71.7717393,58.8824231 59.7668327,70.8873297 C51.7635616,78.8906008 40.5684018,82.2599981 26.1813533,80.9955214 L26.1813533,36.0166291 Z" id="Rectangle" fill="#FFFFFF" transform="translate(46.6814, 58.2298) rotate(63) translate(-46.6814, -58.2298)"></path>
+                <path d="M31.3142144,20.1152586 C43.043641,20.1152586 48.9083543,26.4485919 48.9083543,39.1152586 L13.7200744,39.1152586 C13.7200744,26.4485919 19.5847877,20.1152586 31.3142144,20.1152586 Z" id="Rectangle" fill="#FFFFFF" transform="translate(31.3142, 29.6153) rotate(-27) translate(-31.3142, -29.6153)"></path>
+                <path d="M46.4355988,0 C39.7626827,4.76410996 37.2642487,11.4307766 38.9402968,20" id="Path-4" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"></path>
+                <path d="M0.0383803903,23.4745878 C8.64714393,20.986753 15.8741099,22.415338 21.7192783,27.7603429" id="Path-5" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"></path>
+            </g>
+            <g id="scope" transform="translate(7.5, 8)" stroke="#AC0F0D">
+                <line x1="21.5" y1="73.5" x2="125.5" y2="73.5" id="Line" stroke-width="2" stroke-linecap="square"></line>
+                <line x1="21.5" y1="72.5" x2="125.5" y2="72.5" id="Line" stroke-width="2" stroke-linecap="square" transform="translate(73.5, 72.5) rotate(90) translate(-73.5, -72.5)"></line>
+                <line x1="73.5" y1="-1.74860126e-14" x2="73.5" y2="19.5" id="Line" stroke-width="5" stroke-linecap="square"></line>
+                <line x1="73.5" y1="127" x2="73.5" y2="146.5" id="Line" stroke-width="5" stroke-linecap="square"></line>
+                <line x1="137.25" y1="63.25" x2="137.25" y2="82.75" id="Line" stroke-width="5" stroke-linecap="square" transform="translate(137.25, 73) rotate(-90) translate(-137.25, -73)"></line>
+                <line x1="9.75" y1="63.25" x2="9.75" y2="82.75" id="Line" stroke-width="5" stroke-linecap="square" transform="translate(9.75, 73) rotate(-90) translate(-9.75, -73)"></line>
+                <g id="1" transform="translate(30.5, 68)" stroke-linecap="round" stroke-width="2">
+                    <line x1="0.5" y1="0.5" x2="0.5" y2="10.5" id="Line"></line>
+                    <line x1="11.5" y1="1.5" x2="11.5" y2="9.5" id="Line"></line>
+                    <line x1="21.5" y1="2.5" x2="21.5" y2="8.5" id="Line"></line>
+                    <line x1="31.5" y1="3.5" x2="31.5" y2="7.5" id="Line"></line>
+                </g>
+                <g id="2" transform="translate(73.5, 46) rotate(90) translate(-73.5, -46)translate(57.5, 40.5)" stroke-linecap="round" stroke-width="2">
+                    <line x1="0.5" y1="0.5" x2="0.5" y2="10.5" id="Line"></line>
+                    <line x1="11.5" y1="1.5" x2="11.5" y2="9.5" id="Line"></line>
+                    <line x1="21.5" y1="2.5" x2="21.5" y2="8.5" id="Line"></line>
+                    <line x1="31.5" y1="3.5" x2="31.5" y2="7.5" id="Line"></line>
+                </g>
+                <g id="3" transform="translate(73.5, 101) rotate(270) translate(-73.5, -101)translate(57.5, 95.5)" stroke-linecap="round" stroke-width="2">
+                    <line x1="0.5" y1="0.5" x2="0.5" y2="10.5" id="Line"></line>
+                    <line x1="11.5" y1="1.5" x2="11.5" y2="9.5" id="Line"></line>
+                    <line x1="21.5" y1="2.5" x2="21.5" y2="8.5" id="Line"></line>
+                    <line x1="31.5" y1="3.5" x2="31.5" y2="7.5" id="Line"></line>
+                </g>
+                <g id="4" transform="translate(98.5, 73.5) rotate(180) translate(-98.5, -73.5)translate(82.5, 68)" stroke-linecap="round" stroke-width="2">
+                    <line x1="0.5" y1="0.5" x2="0.5" y2="10.5" id="Line"></line>
+                    <line x1="11.5" y1="1.5" x2="11.5" y2="9.5" id="Line"></line>
+                    <line x1="21.5" y1="2.5" x2="21.5" y2="8.5" id="Line"></line>
+                    <line x1="31.5" y1="3.5" x2="31.5" y2="7.5" id="Line"></line>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -1,8 +1,9 @@
 # n8n
 
 <p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/n8n.png" width="100" height="100">
+  <img src="../logo/n8n.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|

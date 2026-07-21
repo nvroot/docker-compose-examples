@@ -1,8 +1,9 @@
 # Semaphore UI
 
 <p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/semaphore-ui.png" width="100" height="100">
+  <img src="../logo/semaphore-ui.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|

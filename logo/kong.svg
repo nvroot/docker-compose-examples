@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="240px" height="240px" viewBox="0 0 240 240" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>kong</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="kong">
+            <rect id="box" x="0" y="0" width="240" height="240"></rect>
+            <g id="shape" transform="translate(0, 14)" fill-rule="nonzero">
+                <polygon id="Path" fill="#169FCC" points="76 180.431111 81.710956 173 123.972028 173 146 201.373333 142.083916 211 87.5850819 211 88.890443 201.373333"></polygon>
+                <polygon id="Path" fill="#14B59A" points="89 84.3545079 109.43736 49 133.252797 49 240 173.155738 231.723714 211 185.950783 211 188.822147 200.377049"></polygon>
+                <polygon id="Path" fill="#1BC263" points="114 41.9739292 123.820224 23.8137802 153.280899 0 203.760299 39.575419 197.213483 46.2569832 206 58.4208567 206 71.4413407 180.846442 92 138.636704 41.9739292"></polygon>
+                <polygon id="Path" fill="#16BDCC" points="35.6697008 121.088889 49.0247073 121.088889 83.8491549 92 130 145.55 116.983095 165.052778 74.3823144 165.052778 44.9674902 202.405555 38.2054615 211 0 211 0 165.218055"></polygon>
+            </g>
+        </g>
+    </g>
+</svg>

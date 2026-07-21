@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="240px" height="240px" viewBox="0 0 240 240" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>rsshub</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="rsshub">
+            <rect id="1" fill="#FFD6A6" x="0" y="0" width="240" height="240" rx="70"></rect>
+            <path d="M58,48 C131.453872,48 191,107.546128 191,181 C191,202.034986 186.116754,221.929429 177.42206,239.611531 C174.981324,239.86831 172.506041,240 170,240 L70,240 C31.3400675,240 0,208.659932 0,170 L0,70 C0,66.9512702 0.194901702,63.948062 0.572924971,61.0021558 C17.957686,52.66806 37.4337011,48 58,48 Z" id="2" fill="#FF8C4D"></path>
+            <circle id="3" fill="#FF2900" cx="56" cy="184" r="50"></circle>
+        </g>
+    </g>
+</svg>

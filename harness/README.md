@@ -1,8 +1,9 @@
 # Gitness
 
 <p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/harness.png" width="100" height="100">
+  <img src="../logo/harness.svg" width="100" height="100">
 </p>
+
 
 | Name | Description |
 |----------------|--------|
