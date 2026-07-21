@@ -232,17 +232,4 @@
 
 ---
 
-## Usage
-
-Each directory contains a Docker Compose file. To deploy a service:
-
-```sh
-cd <service-name>
-docker compose up -d
-```
-
-Check for `.env` or `env.example` files and configure required variables before starting.
-
----
-
 *151 self-hosted stacks 🚀*
