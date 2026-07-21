@@ -1,9 +1,9 @@
 services:
   bytebase:
-    image: bytebase/bytebase:3.6.0
+    image: bytebase/bytebase:latest
     container_name: bytebase
     restart: unless-stopped
-    ports:
+    expose:
       - 8080
     environment:
       - PG_URL=postgres://bytebase-user:changeme@bytebase-db:5432/bytebase

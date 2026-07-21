@@ -3,7 +3,7 @@ services:
     image: getontime/ontime:v3.8.0
     container_name: ontime
     restart: unless-stopped
-    ports:
+    expose:
       - 4001
       - 8888
       - 9999
