@@ -1,357 +1,46 @@
 services:
-  nextcloud-aio-apache:
-    depends_on:
-      nextcloud-aio-onlyoffice:
-        condition: service_started
-        required: false
-      nextcloud-aio-collabora:
-        condition: service_started
-        required: false
-      nextcloud-aio-nextcloud:
-        condition: service_started
-        required: false
-      nextcloud-aio-notify-push:
-        condition: service_started
-        required: false
-    image: nextcloud/aio-apache:latest
-    user: "33"
+  nextcloud-aio-mastercontainer:
+    image: nextcloud/all-in-one:latest
     init: true
-    healthcheck:
-      start_period: 60s
-      test: /healthcheck.sh
-      interval: 60s
-      timeout: 30s
-      start_interval: 5s
-      retries: 5
-    ports:
-      - ${APACHE_IP_BINDING}:${APACHE_PORT}:${APACHE_PORT}/tcp
-      - ${APACHE_IP_BINDING}:${APACHE_PORT}:${APACHE_PORT}/udp
-    environment:
-      - NC_DOMAIN
-      - NEXTCLOUD_HOST=nextcloud-aio-nextcloud
-      - APACHE_HOST=nextcloud-aio-apache
-      - COLLABORA_HOST=nextcloud-aio-collabora
-      - APACHE_PORT
-      - ONLYOFFICE_HOST=nextcloud-aio-onlyoffice
-      - TZ=${TIMEZONE}
-      - APACHE_MAX_SIZE
-      - APACHE_MAX_TIME=${NEXTCLOUD_MAX_TIME}
-      - NOTIFY_PUSH_HOST=nextcloud-aio-notify-push
+    restart: always
+    container_name: nextcloud-aio-mastercontainer # This line is not allowed to be changed as otherwise AIO will not work correctly
     volumes:
-      - nextcloud_aio_nextcloud:/var/www/html:ro
-      - nextcloud_aio_apache:/mnt/data:rw
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /var/log/supervisord
-      - /var/run/supervisord
-      - /usr/local/apache2/logs
-      - /tmp
-      - /home/www-data
-    cap_drop:
-      - NET_RAW
-
-  nextcloud-aio-database:
-    image: nextcloud/aio-postgresql:latest
-    user: "999"
-    init: true
-    healthcheck:
-      start_period: 60s
-      test: /healthcheck.sh
-      interval: 60s
-      timeout: 30s
-      start_interval: 5s
-      retries: 5
+      - nextcloud_aio_mastercontainer:/mnt/docker-aio-config # This line is not allowed to be changed as otherwise the built-in backup solution will not work
+      - /var/run/docker.sock:/var/run/docker.sock:ro # May be changed on macOS, Windows or docker rootless. See the applicable documentation. If adjusting, don't forget to also set 'WATCHTOWER_DOCKER_SOCKET_PATH'!
+    networks:
+      - nextcloud-network
     expose:
-      - "5432"
-    volumes:
-      - nextcloud_aio_database:/var/lib/postgresql/data:rw
-      - nextcloud_aio_database_dump:/mnt/data:rw
+      - 80
+      - 8080
+      - 8443
     environment:
-      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-      - POSTGRES_DB=nextcloud_database
-      - POSTGRES_USER=nextcloud
-      - TZ=${TIMEZONE}
-      - PGTZ=${TIMEZONE}
-    stop_grace_period: 1800s
-    restart: unless-stopped
-    shm_size: 268435456
-    read_only: true
-    tmpfs:
-      - /var/run/postgresql
-    cap_drop:
-      - NET_RAW
+      # AIO_DISABLE_BACKUP_SECTION: false # Setting this to true allows to hide the backup section in the AIO interface. See https://github.com/nextcloud/all-in-one#how-to-disable-the-backup-section
+      # AIO_COMMUNITY_CONTAINERS: # With this variable, you can add community containers very easily. See https://github.com/nextcloud/all-in-one/tree/main/community-containers#community-containers
+      APACHE_PORT: 11000
+      #APACHE_IP_BINDING: 0.0.0.0
+      APACHE_ADDITIONAL_NETWORK: nextcloud-network
+      # BORG_RETENTION_POLICY: --keep-within=7d --keep-weekly=4 --keep-monthly=6 # Allows to adjust borgs retention policy. See https://github.com/nextcloud/all-in-one#how-to-adjust-borgs-retention-policy
+      COLLABORA_SECCOMP_DISABLED: false # Setting this to true allows to disable Collabora's Seccomp feature. See https://github.com/nextcloud/all-in-one#how-to-disable-collaboras-seccomp-feature
+      FULLTEXTSEARCH_JAVA_OPTIONS: "-Xms1024M -Xmx1024M" # Allows to adjust the fulltextsearch java options. See https://github.com/nextcloud/all-in-one#how-to-adjust-the-fulltextsearch-java-options
+      NEXTCLOUD_DATADIR: /mnt/ncdata # Allows to set the host directory for Nextcloud's datadir. ⚠️⚠️⚠️ Warning: do not set or adjust this value after the initial Nextcloud installation is done! See https://github.com/nextcloud/all-in-one#how-to-change-the-default-location-of-nextclouds-datadir
+      NEXTCLOUD_MOUNT: /mnt/FILES # Allows the Nextcloud container to access the chosen directory on the host. See https://github.com/nextcloud/all-in-one#how-to-allow-the-nextcloud-container-to-access-directories-on-the-host
+      NEXTCLOUD_UPLOAD_LIMIT: 16G # Can be adjusted if you need more. See https://github.com/nextcloud/all-in-one#how-to-adjust-the-upload-limit-for-nextcloud
+      NEXTCLOUD_MAX_TIME: 3600 # Can be adjusted if you need more. See https://github.com/nextcloud/all-in-one#how-to-adjust-the-max-execution-time-for-nextcloud
+      NEXTCLOUD_MEMORY_LIMIT: 1024M # Can be adjusted if you need more. See https://github.com/nextcloud/all-in-one#how-to-adjust-the-php-memory-limit-for-nextcloud
+      # NEXTCLOUD_TRUSTED_CACERTS_DIR: /path/to/my/cacerts # CA certificates in this directory will be trusted by the OS of the nextcloud container (Useful e.g. for LDAPS) See https://github.com/nextcloud/all-in-one#how-to-trust-user-defined-certification-authorities-ca
+      # NEXTCLOUD_STARTUP_APPS: deck twofactor_totp tasks calendar contacts notes # Allows to modify the Nextcloud apps that are installed on starting AIO the first time. See https://github.com/nextcloud/all-in-one#how-to-change-the-nextcloud-apps-that-are-installed-on-the-first-startup
+      # NEXTCLOUD_ADDITIONAL_APKS: imagemagick # This allows to add additional packages to the Nextcloud container permanently. Default is imagemagick but can be overwritten by modifying this value. See https://github.com/nextcloud/all-in-one#how-to-add-os-packages-permanently-to-the-nextcloud-container
+      # NEXTCLOUD_ADDITIONAL_PHP_EXTENSIONS: imagick # This allows to add additional php extensions to the Nextcloud container permanently. Default is imagick but can be overwritten by modifying this value. See https://github.com/nextcloud/all-in-one#how-to-add-php-extensions-permanently-to-the-nextcloud-container
+      # NEXTCLOUD_ENABLE_DRI_DEVICE: true # This allows to enable the /dev/dri device for containers that profit from it. ⚠️⚠️⚠️ Warning: this only works if the '/dev/dri' device is present on the host! If it should not exist on your host, don't set this to true as otherwise the Nextcloud container will fail to start! See https://github.com/nextcloud/all-in-one#how-to-enable-hardware-acceleration-for-nextcloud
+      # NEXTCLOUD_ENABLE_NVIDIA_GPU: true # This allows to enable the NVIDIA runtime and GPU access for containers that profit from it. ⚠️⚠️⚠️ Warning: this only works if an NVIDIA gpu is installed on the server. See https://github.com/nextcloud/all-in-one#how-to-enable-hardware-acceleration-for-nextcloud.
+      # NEXTCLOUD_KEEP_DISABLED_APPS: false # Setting this to true will keep Nextcloud apps that are disabled in the AIO interface and not uninstall them if they should be installed. See https://github.com/nextcloud/all-in-one#how-to-keep-disabled-apps
+      # SKIP_DOMAIN_VALIDATION: false # This should only be set to true if things are correctly configured. See https://github.com/nextcloud/all-in-one?tab=readme-ov-file#how-to-skip-the-domain-validation
+      # TALK_PORT: 3478 # This allows to adjust the port that the talk container is using which is exposed on the host. See https://github.com/nextcloud/all-in-one#how-to-adjust-the-talk-port
+    # security_opt: ["label:disable"] # Is needed when using SELinux
 
-  nextcloud-aio-nextcloud:
-    depends_on:
-      nextcloud-aio-database:
-        condition: service_started
-        required: false
-      nextcloud-aio-redis:
-        condition: service_started
-        required: false
-      nextcloud-aio-fulltextsearch:
-        condition: service_started
-        required: false
-      nextcloud-aio-imaginary:
-        condition: service_started
-        required: false
-    image: nextcloud/aio-nextcloud:latest
-    init: true
-    healthcheck:
-      start_period: 60s
-      test: /healthcheck.sh
-      interval: 60s
-      timeout: 30s
-      start_interval: 5s
-      retries: 5
-    expose:
-      - "9000"
-      - "9001"
-    volumes:
-      - nextcloud_aio_nextcloud:/var/www/html:rw
-      - ${NEXTCLOUD_DATADIR}:/mnt/ncdata:rw
-      - ${NEXTCLOUD_MOUNT}:${NEXTCLOUD_MOUNT}:rw
-      - ${NEXTCLOUD_TRUSTED_CACERTS_DIR}:/usr/local/share/ca-certificates:ro
-    environment:
-      - NEXTCLOUD_HOST=nextcloud-aio-nextcloud
-      - POSTGRES_HOST=nextcloud-aio-database
-      - POSTGRES_PORT=5432
-      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-      - POSTGRES_DB=nextcloud_database
-      - POSTGRES_USER=nextcloud
-      - REDIS_HOST=nextcloud-aio-redis
-      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
-      - APACHE_HOST=nextcloud-aio-apache
-      - APACHE_PORT
-      - NC_DOMAIN
-      - ADMIN_USER=admin
-      - ADMIN_PASSWORD=${NEXTCLOUD_PASSWORD}
-      - NEXTCLOUD_DATA_DIR=/mnt/ncdata
-      - OVERWRITEHOST=${NC_DOMAIN}
-      - OVERWRITEPROTOCOL=https
-      - TURN_SECRET
-      - SIGNALING_SECRET
-      - ONLYOFFICE_SECRET
-      - NEXTCLOUD_MOUNT
-      - CLAMAV_ENABLED
-      - CLAMAV_HOST=nextcloud-aio-clamav
-      - ONLYOFFICE_ENABLED
-      - COLLABORA_ENABLED
-      - COLLABORA_HOST=nextcloud-aio-collabora
-      - TALK_ENABLED
-      - ONLYOFFICE_HOST=nextcloud-aio-onlyoffice
-      - UPDATE_NEXTCLOUD_APPS
-      - TZ=${TIMEZONE}
-      - IMAGINARY_ENABLED
-      - IMAGINARY_HOST=nextcloud-aio-imaginary
-      - CLAMAV_MAX_SIZE=${APACHE_MAX_SIZE}
-      - PHP_UPLOAD_LIMIT=${NEXTCLOUD_UPLOAD_LIMIT}
-      - PHP_MEMORY_LIMIT=${NEXTCLOUD_MEMORY_LIMIT}
-      - FULLTEXTSEARCH_ENABLED
-      - FULLTEXTSEARCH_HOST=nextcloud-aio-fulltextsearch
-      - PHP_MAX_TIME=${NEXTCLOUD_MAX_TIME}
-      - TRUSTED_CACERTS_DIR=${NEXTCLOUD_TRUSTED_CACERTS_DIR}
-      - STARTUP_APPS=${NEXTCLOUD_STARTUP_APPS}
-      - ADDITIONAL_APKS=${NEXTCLOUD_ADDITIONAL_APKS}
-      - ADDITIONAL_PHP_EXTENSIONS=${NEXTCLOUD_ADDITIONAL_PHP_EXTENSIONS}
-      - INSTALL_LATEST_MAJOR
-      - TALK_RECORDING_ENABLED
-      - RECORDING_SECRET
-      - FULLTEXTSEARCH_PASSWORD
-      - REMOVE_DISABLED_APPS
-      - IMAGINARY_SECRET
-      - WHITEBOARD_SECRET
-      - WHITEBOARD_ENABLED
-    stop_grace_period: 600s
-    restart: unless-stopped
-    cap_drop:
-      - NET_RAW
-
-  nextcloud-aio-notify-push:
-    image: nextcloud/aio-notify-push:latest
-    user: "33"
-    init: true
-    healthcheck:
-      start_period: 60s
-      test: /healthcheck.sh
-      interval: 60s
-      timeout: 30s
-      start_interval: 5s
-      retries: 5
-    expose:
-      - "7867"
-    volumes:
-      - nextcloud_aio_nextcloud:/nextcloud:ro
-    environment:
-      - NC_DOMAIN
-      - NEXTCLOUD_HOST=nextcloud-aio-nextcloud
-      - TZ=${TIMEZONE}
-      - REDIS_HOST=nextcloud-aio-redis
-      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
-      - POSTGRES_HOST=nextcloud-aio-database
-      - POSTGRES_PORT=5432
-      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-      - POSTGRES_DB=nextcloud_database
-      - POSTGRES_USER=nextcloud
-    restart: unless-stopped
-    read_only: true
-    cap_drop:
-      - NET_RAW
-
-  nextcloud-aio-redis:
-    image: nextcloud/aio-redis:latest
-    user: "999"
-    init: true
-    healthcheck:
-      start_period: 60s
-      test: /healthcheck.sh
-      interval: 60s
-      timeout: 30s
-      start_interval: 5s
-      retries: 5
-    expose:
-      - "6379"
-    environment:
-      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
-      - TZ=${TIMEZONE}
-    volumes:
-      - nextcloud_aio_redis:/data:rw
-    restart: unless-stopped
-    read_only: true
-    cap_drop:
-      - NET_RAW
-
-  nextcloud-aio-collabora:
-    command: ${ADDITIONAL_COLLABORA_OPTIONS}
-    image: nextcloud/aio-collabora:latest
-    init: true
-    healthcheck:
-      start_period: 60s
-      test: /healthcheck.sh
-      interval: 60s
-      timeout: 30s
-      start_interval: 5s
-      retries: 9
-    expose:
-      - "9980"
-    environment:
-      - aliasgroup1=https://${NC_DOMAIN}:443
-      - extra_params=--o:ssl.enable=false --o:ssl.termination=true --o:mount_jail_tree=false --o:logging.level=warning --o:home_mode.enable=true --o:remote_font_config.url=https://${NC_DOMAIN}/apps/richdocuments/settings/fonts.json --o:net.post_allow.host[0]=.+
-      - dictionaries=${COLLABORA_DICTIONARIES}
-      - TZ=${TIMEZONE}
-      - server_name=${NC_DOMAIN}
-      - DONT_GEN_SSL_CERT=1
-    restart: unless-stopped
-    profiles:
-      - collabora
-    cap_add:
-      - MKNOD
-      - SYS_ADMIN
-    cap_drop:
-      - NET_RAW
-
-  nextcloud-aio-onlyoffice:
-    image: nextcloud/aio-onlyoffice:latest
-    init: true
-    healthcheck:
-      start_period: 60s
-      test: /healthcheck.sh
-      interval: 60s
-      timeout: 30s
-      start_interval: 5s
-      retries: 9
-    expose:
-      - "80"
-    environment:
-      - TZ=${TIMEZONE}
-      - JWT_ENABLED=true
-      - JWT_HEADER=AuthorizationJwt
-      - JWT_SECRET=${ONLYOFFICE_SECRET}
-    volumes:
-      - nextcloud_aio_onlyoffice:/var/lib/onlyoffice:rw
-    restart: unless-stopped
-    profiles:
-      - onlyoffice
-    cap_drop:
-      - NET_RAW
-
-  nextcloud-aio-imaginary:
-    image: nextcloud/aio-imaginary:latest
-    user: "65534"
-    init: true
-    healthcheck:
-      start_period: 60s
-      test: /healthcheck.sh
-      interval: 60s
-      timeout: 30s
-      start_interval: 5s
-      retries: 5
-    expose:
-      - "9000"
-    environment:
-      - TZ=${TIMEZONE}
-      - IMAGINARY_SECRET
-    restart: unless-stopped
-    cap_add:
-      - SYS_NICE
-    cap_drop:
-      - NET_RAW
-    profiles:
-      - imaginary
-    read_only: true
-    tmpfs:
-      - /tmp
-
-  nextcloud-aio-fulltextsearch:
-    image: nextcloud/aio-fulltextsearch:latest
-    init: false
-    healthcheck:
-      start_period: 60s
-      test: /healthcheck.sh
-      interval: 10s
-      timeout: 5s
-      start_interval: 5s
-      retries: 5
-    expose:
-      - 9200
-    environment:
-      - TZ=${TIMEZONE}
-      - ES_JAVA_OPTS=${FULLTEXTSEARCH_JAVA_OPTIONS}
-      - bootstrap.memory_lock=true
-      - cluster.name=nextcloud-aio
-      - discovery.type=single-node
-      - logger.org.elasticsearch.discovery=WARN
-      - http.port=9200
-      - xpack.license.self_generated.type=basic
-      - xpack.security.enabled=false
-      - FULLTEXTSEARCH_PASSWORD
-    volumes:
-      - nextcloud_aio_elasticsearch:/usr/share/elasticsearch/data:rw
-    restart: unless-stopped
-    profiles:
-      - fulltextsearch
-    cap_drop:
-      - NET_RAW
-
-volumes:
-  nextcloud_aio_apache:
-    name: nextcloud_aio_apache
-  nextcloud_aio_database:
-    name: nextcloud_aio_database
-  nextcloud_aio_database_dump:
-    name: nextcloud_aio_database_dump
-  nextcloud_aio_elasticsearch:
-    name: nextcloud_aio_elasticsearch
-  nextcloud_aio_nextcloud:
-    name: nextcloud_aio_nextcloud
-  nextcloud_aio_onlyoffice:
-    name: nextcloud_aio_onlyoffice
-  nextcloud_aio_redis:
-    name: nextcloud_aio_redis
-  nextcloud_aio_nextcloud_data:
-    name: nextcloud_aio_nextcloud_data
-
+volumes: # If you want to store the data on a different drive, see https://github.com/nextcloud/all-in-one#how-to-store-the-filesinstallation-on-a-separate-drive
+  nextcloud_aio_mastercontainer:
+    name: nextcloud_aio_mastercontainer # This line is not allowed to be changed as otherwise the built-in backup solution will not work
 networks:
-  default:
-    driver: bridge
+  nextcloud-network:
+    external: true
