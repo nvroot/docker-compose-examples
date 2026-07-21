@@ -11,6 +11,6 @@
 | **Description** |  Open Source Identity and Access Management  |
 | **Website** | https://www.keycloak.org    |
 | **Docs** |    https://www.keycloak.org/documentation    |
-| **Registry** |    https://hub.docker.com/r/kestra/kestra   |
+| **Registry** |    https://quay.io/repository/keycloak/keycloak   |
 | **Source&nbsp;Code&nbsp;** |   https://github.com/keycloak/keycloak  |
 | **Port** |    8080   |

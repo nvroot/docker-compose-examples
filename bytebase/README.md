@@ -12,4 +12,4 @@
 | **Docs** |    —    |
 | **Registry** |    https://hub.docker.com/r/bytebase/bytebase   |
 | **Source&nbsp;Code&nbsp;** |   —  |
-| **Port** |    —   |
+| **Port** |    8080   |

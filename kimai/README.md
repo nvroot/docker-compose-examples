@@ -8,7 +8,7 @@
 | Name | Description |
 |----------------|--------|
 | **Used Image** |   kimai/kimai2:apache-latest  |
-| **Description** |  imai is a web-based multi-user time-tracking application. Works great for everyone: freelancers, companies, organizations - everyone can track their times, generate reports, create invoices and do so much more  |
+| **Description** |  Kimai is a web-based multi-user time-tracking application. Works great for everyone: freelancers, companies, organizations - everyone can track their times, generate reports, create invoices and do so much more  |
 | **Website** | https://kimai.cloud    |
 | **Docs** |   https://www.kimai.org/documentation    |
 | **Registry** |    https://hub.docker.com/r/kimai/kimai2   |

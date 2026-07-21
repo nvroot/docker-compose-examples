@@ -11,6 +11,6 @@
 | **Description** |  A fancy, easy-to-use and reactive self-hosted docker compose.yaml stack-oriented manager  |
 | **Website** | https://dockge.kuma.pet/    |
 | **Docs** |    https://hub.docker.com/r/louislam/dockge    |
-| **Registry** |    link   |
+| **Registry** |    https://hub.docker.com/r/louislam/dockge   |
 | **Source&nbsp;Code&nbsp;** |   https://github.com/louislam/dockge  |
 | **Port** |    5001   |

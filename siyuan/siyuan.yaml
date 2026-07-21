@@ -1,0 +1,21 @@
+services:
+  siyuan:
+    image: b3log/siyuan:latest
+    container_name: siyuan
+    restart: unless-stopped
+    command: '--workspace=/workspace/ --accessAuthCode=password'
+    environment:
+      - TZ=UTC
+      - PUID=1000
+      - PGID=1000
+    expose:
+      - 6806
+    volumes:
+      - siyuan-data:/workspace
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
+volumes:
+  siyuan-data:

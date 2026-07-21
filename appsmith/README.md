@@ -7,7 +7,7 @@
 
 | Name | Description |
 |----------------|--------|
-| **Used Image**| linuxserver/apprise-api:latest |
+| **Used Image**| appsmith/appsmith-ce:latest |
 | **Description**| Platform to build admin panels, internal tools, and dashboards. Integrates with 25+ databases and any API |
 | **Website** | https://appsmith.com 	|
 | **Docs** | https://docs.appsmith.com	|

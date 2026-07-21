@@ -1,0 +1,129 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+x-shared-env: &shared-env
+  CANARY_ALERT_EMAIL_FROM_ADDRESS: ${CANARY_ALERT_EMAIL_FROM_ADDRESS:-do-not-reply@canary.site.com} # Change
+  CANARY_ALERT_EMAIL_FROM_DISPLAY: ${CANARY_ALERT_EMAIL_FROM_DISPLAY:-CanaryTokens}
+  CANARY_ALERT_EMAIL_SUBJECT: ${CANARY_ALERT_EMAIL_SUBJECT:-Canary Token Triggered}
+  CANARY_DOMAINS: ${CANARY_DOMAINS:-canary.site.com} # Change
+  CANARY_FORCE_HTTPS: ${CANARY_FORCE_HTTPS:-False}
+  CANARY_FRONTEND_LOG_COUNT: ${CANARY_FRONTEND_LOG_COUNT:-10}
+  CANARY_FRONTEND_LOG_SIZE: ${CANARY_FRONTEND_LOG_SIZE:-10485760}
+  # CANARY_GOOGLE_API_KEY: ${CANARY_GOOGLE_API_KEY:-} 
+  # CANARY_IPINFO_API_KEY: ${CANARY_IPINFO_API_KEY:-}
+  # CANARY_MAILGUN_API_KEY: ${CANARY_MAILGUN_API_KEY:-}
+  # CANARY_MAILGUN_DOMAIN_NAME: ${CANARY_MAILGUN_DOMAIN_NAME:-}
+  # CANARY_MANDRILL_API_KEY: ${CANARY_MANDRILL_API_KEY:-}
+  CANARY_MAX_ALERTS_PER_MINUTE: ${CANARY_MAX_ALERTS_PER_MINUTE:-1000}
+  CANARY_MAX_UPLOAD_SIZE: ${CANARY_MAX_UPLOAD_SIZE:-10485760}
+  CANARY_NXDOMAINS: ${CANARY_NXDOMAINS:-nx.site.com} # Change
+  CANARY_PUBLIC_DOMAIN: ${CANARY_PUBLIC_DOMAIN:-canary.site.com} # Change
+  CANARY_PUBLIC_IP: ${CANARY_PUBLIC_IP:-yourserverip} # Change
+  CANARY_REAL_IP_HEADER: ${CANARY_REAL_IP_HEADER:-X-Real-IP}
+  CANARY_REDIS_DB: ${CANARY_REDIS_DB:-0}
+  CANARY_REDIS_HOST: ${CANARY_REDIS_HOST:-canary-redis}
+  CANARY_REDIS_PORT: ${CANARY_REDIS_PORT:-6379}
+  # CANARY_SENDGRID_API_KEY: ${CANARY_SENDGRID_API_KEY:-CHANGE_ME} # Change
+  # CANARY_SENDGRID_SANDBOX_MODE: ${CANARY_SENDGRID_SANDBOX_MODE:-True}
+  # CANARY_SENTRY_DSN: ${CANARY_SENTRY_DSN:-}
+  # CANARY_SENTRY_ENABLE: ${CANARY_SENTRY_ENABLE:-False}
+  # CANARY_SENTRY_ENVIRONMENT: ${CANARY_SENTRY_ENVIRONMENT:-local}
+  # CANARY_SMTP_PASSWORD: ${CANARY_SMTP_PASSWORD:-}
+  # CANARY_SMTP_PORT: ${CANARY_SMTP_PORT:-}
+  # CANARY_SMTP_SERVER: ${CANARY_SMTP_SERVER:-}
+  # CANARY_SMTP_USERNAME: ${CANARY_SMTP_USERNAME:-}
+  CANARY_SWITCHBOARD_LOG_COUNT: ${CANARY_SWITCHBOARD_LOG_COUNT:-20}
+  CANARY_SWITCHBOARD_LOG_SIZE: ${CANARY_SWITCHBOARD_LOG_SIZE:-500000000}
+  CANARY_SWITCHBOARD_SCHEME: ${CANARY_SWITCHBOARD_SCHEME:-http}
+  CANARY_TOKEN_RETURN: ${CANARY_TOKEN_RETURN:-gif}
+  CANARY_USING_NGINX: ${CANARY_USING_NGINX:-False}
+  CANARY_WEB_IMAGE_UPLOAD_PATH: ${CANARY_WEB_IMAGE_UPLOAD_PATH:-/uploads}
+  CANARY_WG_PRIVATE_KEY_SEED: ${CANARY_WG_PRIVATE_KEY_SEED:-privatekey} # Change dd bs=32 count=1 if=/dev/urandom 2>/dev/null | base64
+  # ERROR_LOG_WEBHOOK: ${ERROR_LOG_WEBHOOK:-}
+name: canary
+services:
+  canary-nginx:
+    image: nginx:alpine
+    container_name: canary-nginx
+    restart: unless-stopped
+    expose:
+      - 80
+    networks:
+      - canary-network
+      - proxy
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /dev/null:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+     canary-frontend:
+      condition: service_started
+     canary-switchboard:
+      condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      <<: *default-healthcheck
+  canary-frontend:
+    image: thinkst/canarytokens:latest
+    container_name: canary-frontend
+    command: bash -c "cd frontend; env | grep ^CANARY_ > ../frontend/frontend.env; cp ../frontend/frontend.env ../switchboard/switchboard.env; poetry run python -m uvicorn app:app --host 0.0.0.0 --port 8082"
+    restart: unless-stopped
+    environment:
+      <<: *shared-env
+      LOG_FILE: ${LOG_FILE:-frontend.log}
+    volumes:
+      - canary-logs:/logs
+      - canary-uploads:/uploads
+    networks:
+      - canary-network
+    expose:
+     - 8082
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8082/ || exit 1"]
+      <<: *default-healthcheck
+  canary-switchboard:
+    image: thinkst/canarytokens:latest
+    container_name: canary-switchboard
+    command: bash -c "cd switchboard; rm -f switchboard.pid; env | grep ^CANARY_ > ../frontend/frontend.env; cp ../frontend/frontend.env ../switchboard/switchboard.env; poetry run twistd -noy switchboard.tac --pidfile=switchboard.pid"
+    restart: unless-stopped
+    environment:
+      <<: *shared-env
+      LOG_FILE: ${LOG_FILE:-switchboard.log}
+    networks:
+      - canary-network
+    volumes_from:
+      - canary-frontend
+    ports:
+      - 25:2500
+      - 3306:3306
+      - 53:5354
+      - 53:5354/udp
+      - 6443:6443
+      - 8083:8083
+      - 52001:51820/udp
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8083/ || exit 1"]
+      <<: *default-healthcheck
+  canary-redis:
+    image: redis:latest
+    container_name: canary-redis
+    restart: unless-stopped
+    volumes:
+      - canary-redis:/data
+    networks:
+      - canary-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+networks:
+  canary-network:
+    name: canary-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  canary-logs:
+  canary-redis:
+  canary-uploads:

@@ -1,0 +1,94 @@
+services:
+  redis:
+    image: docker.io/library/redis:7
+    restart: unless-stopped
+    user: "1047:100"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+    volumes:
+      - './redis:/data'
+    networks:
+      - paperless-network
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - gotenberg
+      - tika
+    expose:
+      - 8000
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-S", "--max-time", "2", "http://localhost:8000"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+    volumes:
+      - './data:/usr/src/paperless/data'
+      - './media:/usr/src/paperless/media'
+      - './export:/usr/src/paperless/export'
+      - './input:/usr/src/paperless/consume'
+    environment:
+      PAPERLESS_REDIS: redis://redis:6379
+      PAPERLESS_TIKA_ENABLED: 1
+      PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
+      PAPERLESS_TIKA_ENDPOINT: http://tika:9998
+      PAPERLESS_URL: "https://paper.ssql.one"   
+      PAPERLESS_OCR_USER_ARGS: '{"continue_on_soft_render_error": true}'
+      COMPOSE_PROJECT_NAME: paperless
+    networks:
+      - paperless-network
+  gotenberg:
+    image: gotenberg/gotenberg:latest
+    container_name: gotenberg
+    restart: unless-stopped
+    expose:
+      - 3000
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+      - "--api-timeout=400s"
+      - "--libreoffice-auto-start=true"
+      - "--libreoffice-start-timeout=30s"
+      - "--log-level=debug"
+    networks:
+      - paperless-network
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - 'http://127.0.0.1:3000'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  tika:
+    image: apache/tika:latest
+    container_name: tika
+    restart: unless-stopped
+    expose:
+      - 9998
+    networks:
+      - paperless-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'java -jar tika-server' || exit 1"]  # Check if Tik>
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  paperless-network:
+    name: paperless-network
+    driver: bridge

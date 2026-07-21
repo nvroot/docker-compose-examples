@@ -1,0 +1,56 @@
+services:
+  grafana:
+    image: grafana/grafana-oss:main
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SERVER_ROOT_URL=https://grafana.example.com
+      - GF_SERVER_DOMAIN=https://grafana.example.com
+      - GF_SECURITY_ADMIN_PASSWORD=admin-password
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=grafana-db
+      - GF_DATABASE_USER=grafana-user
+      - GF_DATABASE_PASSWORD=changeme
+      - GF_DATABASE_NAME=grafana
+    expose:
+      - 3000
+    networks:
+      - grafana-network
+      - proxy
+    volumes:
+      - grafana-data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/api/health"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+    depends_on:
+      grafana-db:
+        condition: service_healthy
+  grafana-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - grafana-pg:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=grafana-user
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=grafana
+    networks:
+      - grafana-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  grafana-network:
+  proxy:
+    external: true
+volumes:
+  grafana-data:
+  grafana-pg:

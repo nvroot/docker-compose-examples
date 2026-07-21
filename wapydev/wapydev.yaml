@@ -1,0 +1,61 @@
+services:
+  wapydev:
+    image: ghcr.io/meceware/wapy.dev:latest
+    container_name: wapydev
+    restart: unless-stopped
+    expose:
+      - 3000
+    environment:
+      - SITE_URL=https://wapy.example.com
+      - AUTH_SECRET=authsecret
+      - AUTH_TRUST_HOST=true
+      - AUTH_URL=https://wapy.example.com/api/auth
+      - DATABASE_URL=postgresql://wapydev-user:changeme@wapydev-db:5432/wapydev?schema=public
+      - GITHUB_ID=githubid
+      - GITHUB_SECRET=githubsecret
+    networks:
+      - wapydev-network
+      - proxy
+    depends_on:
+      wapydev-db:
+        condition: service_healthy
+  wapydev-db:
+    image: "postgres:17"
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=wapydev
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=wapydev-user
+      - POSTGRES_PORT=5432
+    volumes:
+      - "wapydev-db:/var/lib/postgresql/data"
+    networks:
+      - wapydev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  wapydev-ron:
+    container_name: wapydev-cron
+    image: alpine:3.21
+    restart: unless-stopped
+    command: >
+      sh -c 'while true; do
+        /usr/bin/flock -n /tmp/wapy.lockfile wget -qO- wapydev:3000/api/cron/;
+        sleep 60;
+      done'
+    networks:
+      - wapydev-network
+    depends_on:
+      - wapydev
+networks:
+  wapydev-network:
+    name: wapydev-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  wapydev-db:

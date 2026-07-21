@@ -1,0 +1,162 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  nginx:
+    image: "defectdojo/defectdojo-nginx:${DD_VERSION}"
+    restart: unless-stopped
+    depends_on:
+      uwsgi:
+        condition: service_started
+    environment:
+      NGINX_METRICS_ENABLED: "${NGINX_METRICS_ENABLED:-false}"
+      DD_UWSGI_HOST: "${DD_UWSGI_HOST:-uwsgi}"
+      DD_UWSGI_PORT: "${DD_UWSGI_PORT:-3031}"
+    networks:
+      - proxy
+      - defectdojo-network
+    volumes:
+      - defectdojo-media:/usr/share/nginx/html/media
+    expose:
+      - 8080
+      - 8443
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep nginx || exit 1"]
+      <<: *default-healthcheck
+  uwsgi:
+    image: "defectdojo/defectdojo-django:${DD_VERSION}"
+    restart: unless-stopped
+    depends_on:
+      initializer:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+      valkey:
+        condition: service_started
+    entrypoint: ['/wait-for-it.sh', '${DD_DATABASE_HOST:-postgres}:${DD_DATABASE_PORT:-5432}', '-t', '30', '--', '/entrypoint-uwsgi.sh']
+    environment:
+      DD_DEBUG: 'False'
+      DD_DJANGO_METRICS_ENABLED: "${DD_DJANGO_METRICS_ENABLED:-False}"
+      DD_DATABASE_URL: "postgresql://defectdojo:${DD_DATABASE_PASSWORD}@postgres:5432/defectdojo"
+      DD_CELERY_BROKER_URL: ${DD_CELERY_BROKER_URL:-redis://valkey:6379/0}
+      DD_SECRET_KEY: "${DD_SECRET_KEY:-dd-secret-key}"
+      DD_CREDENTIAL_AES_256_KEY: "${DD_CREDENTIAL_AES_256_KEY:-aes-256-key}"
+      DD_DATABASE_READINESS_TIMEOUT: "${DD_DATABASE_READINESS_TIMEOUT:-30}"
+    networks:
+      - defectdojo-network
+    expose:
+      - 3031
+    volumes:
+        - "defectdojo-docker:/app/docker/extra_settings"
+        - "defectdojo-media:${DD_MEDIA_ROOT:-/app/media}"
+    healthcheck:
+      test: ["CMD-SHELL", "echo", "health"]
+      <<: *default-healthcheck
+  celerybeat:
+    image: "defectdojo/defectdojo-django:${DD_VERSION}"
+    restart: unless-stopped
+    depends_on:
+      initializer:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+      valkey:
+        condition: service_started
+    entrypoint: ['/wait-for-it.sh', '${DD_DATABASE_HOST:-postgres}:${DD_DATABASE_PORT:-5432}', '-t', '30', '--', '/entrypoint-celery-beat.sh']
+    environment:
+      DD_DATABASE_URL: "postgresql://defectdojo:${DD_DATABASE_PASSWORD}@postgres:5432/defectdojo"
+      DD_CELERY_BROKER_URL: ${DD_CELERY_BROKER_URL:-redis://valkey:6379/0}
+      DD_SECRET_KEY: "${DD_SECRET_KEY:-dd-secret-key}"
+      DD_CREDENTIAL_AES_256_KEY: "${DD_CREDENTIAL_AES_256_KEY:-aes-256-key}"
+      DD_DATABASE_READINESS_TIMEOUT: "${DD_DATABASE_READINESS_TIMEOUT:-30}"
+    networks:
+      - defectdojo-network
+    volumes:
+        - "defectdojo-docker:/app/docker/extra_settings"
+    healthcheck:
+      test: ["CMD-SHELL", "echo", "health"]
+      <<: *default-healthcheck
+  celeryworker:
+    image: "defectdojo/defectdojo-django:${DD_VERSION}"
+    restart: unless-stopped
+    depends_on:
+      initializer:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+      valkey:
+        condition: service_started
+    entrypoint: ['/wait-for-it.sh', '${DD_DATABASE_HOST:-postgres}:${DD_DATABASE_PORT:-5432}', '-t', '30', '--', '/entrypoint-celery-worker.sh']
+    environment:
+      DD_DATABASE_URL: "postgresql://defectdojo:${DD_DATABASE_PASSWORD}@postgres:5432/defectdojo"
+      DD_CELERY_BROKER_URL: ${DD_CELERY_BROKER_URL:-redis://valkey:6379/0}
+      DD_SECRET_KEY: "${DD_SECRET_KEY:-dd-secret-key}"
+      DD_CREDENTIAL_AES_256_KEY: "${DD_CREDENTIAL_AES_256_KEY:-aes-256-key}"
+      DD_DATABASE_READINESS_TIMEOUT: "${DD_DATABASE_READINESS_TIMEOUT:-30}"
+    networks:
+      - defectdojo-network
+    volumes:
+        - "defectdojo-docker:/app/docker/extra_settings"
+        - "defectdojo-media:${DD_MEDIA_ROOT:-/app/media}"
+    healthcheck:
+      test: ["CMD-SHELL", "echo", "health"]
+      <<: *default-healthcheck
+  initializer:
+    image: "defectdojo/defectdojo-django:${DD_VERSION}"
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ['/wait-for-it.sh', '${DD_DATABASE_HOST:-postgres}:${DD_DATABASE_PORT:-5432}', '--', '/entrypoint-initializer.sh']
+    environment:
+      DD_DATABASE_URL: "postgresql://defectdojo:${DD_DATABASE_PASSWORD}@postgres:5432/defectdojo"
+      DD_ADMIN_USER: "admin"
+      DD_ADMIN_MAIL: "admin@example.com"
+      DD_ADMIN_FIRST_NAME: "firstname"
+      DD_ADMIN_LAST_NAME: "lastname"
+      DD_INITIALIZE: "${DD_INITIALIZE:-true}"
+      DD_SECRET_KEY: "${DD_SECRET_KEY:-dd-secret-key}"
+      DD_CREDENTIAL_AES_256_KEY: "${DD_CREDENTIAL_AES_256_KEY:-aes-256-key}"
+      DD_DATABASE_READINESS_TIMEOUT: "${DD_DATABASE_READINESS_TIMEOUT:-30}"
+    networks:
+      - defectdojo-network
+    volumes:
+        - "defectdojo-docker:/app/docker/extra_settings"
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: ${DD_DATABASE_NAME:-defectdojo}
+      POSTGRES_USER: ${DD_DATABASE_USER:-defectdojo}
+      POSTGRES_PASSWORD: ${DD_DATABASE_PASSWORD:-changeme}
+    networks:
+      - defectdojo-network
+    volumes:
+      - defectdojo-pg:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+  valkey:
+    image: valkey/valkey:9
+    restart: unless-stopped
+    volumes:
+      - defectdojo-valkey:/data
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+volumes:
+  defectdojo-pg: {}
+  defectdojo-media: {}
+  defectdojo-valkey: {}
+  defectdojo-docker: {}
+networks:
+  defectdojo-network:
+    name: defectdojo-network
+    driver: bridge
+  proxy:
+    external: true

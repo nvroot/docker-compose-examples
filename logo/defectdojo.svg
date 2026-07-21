@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="240px" height="240px" viewBox="0 0 240 240" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>defectdojo</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="defectdojo" fill-rule="nonzero">
+            <polygon id="Path" fill="#1779C5" points="103.447222 0 0 0 0 80 136.422222 80 159.733333 103.308333 159.733333 240 240 240 240 136.280556"></polygon>
+            <path d="M56.6896983,160 L0,160 L0,240 L80,240 L80,183.308333 C70.8975383,174.205556 65.7949377,169.1 56.692476,160 L56.6896983,160 Z" id="Path" fill="#F2561D"></path>
+        </g>
+    </g>
+</svg>

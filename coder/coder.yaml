@@ -1,0 +1,56 @@
+services:
+  coder:
+    image: ghcr.io/coder/coder:latest
+    container_name: coder
+    restart: unless-stopped
+    environment:
+      - CODER_PG_CONNECTION_URL=postgresql://coder-user:changeme@coder-database:5432/coder?sslmode=disable
+      - CODER_HTTP_ADDRESS=0.0.0.0:7080
+      - CODER_ACCESS_URL=https://coder.example.com
+      - CODER_OAUTH2_GITHUB_DEFAULT_PROVIDER_ENABLE=false
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - coder-data:/home/coder
+    expose:
+      - 7080
+    networks:
+      - coder-network
+      - proxy
+    depends_on:
+      coder-database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7080"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  coder-database:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=coder
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=coder-user
+      - POSTGRES_PORT=5432
+    volumes:
+      - "coder-pg:/var/lib/postgresql"
+    networks:
+      - coder-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  coder-network:
+    name: coder-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  coder-data:
+  coder-pg:

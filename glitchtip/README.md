@@ -12,6 +12,4 @@
 | **Docs** |    —    |
 | **Registry** |    https://hub.docker.com/r/glitchtip/glitchtip   |
 | **Source&nbsp;Code&nbsp;** |   —  |
-| **Port** |    —   |
-After registration add:
-- ENABLE_USER_REGISTRATION=False
+| **Port** |    8000   |

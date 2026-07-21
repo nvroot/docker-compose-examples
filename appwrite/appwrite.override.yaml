@@ -1,0 +1,238 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+x-appwrite-labels: &appwrite-labels
+  labels:
+    - "traefik.enable=true"
+    # ------ HTTP → HTTPS redirect (a.example.com) ------
+    - "traefik.http.routers.appwrite-api.rule=Host(`a.example.com`)"
+    - "traefik.http.routers.appwrite-api.entrypoints=web"
+    - "traefik.http.routers.appwrite-api.middlewares=redirect-to-https@file"
+    - "traefik.http.routers.appwrite-api.service=appwrite-api-service"
+    # ------ HTTPS (a.example.com) ------
+    - "traefik.http.routers.appwrite-api-secure.rule=Host(`a.example.com`)"
+    - "traefik.http.routers.appwrite-api-secure.entrypoints=websecure"
+    - "traefik.http.routers.appwrite-api-secure.tls=true"
+    - "traefik.http.routers.appwrite-api-secure.tls.certresolver=letsencrypt"
+    - "traefik.http.routers.appwrite-api-secure.service=appwrite-api-service"
+    - "traefik.http.routers.appwrite-api-secure.middlewares=crowdsec@file,security-headers@file"
+    - "traefik.http.services.appwrite-api-service.loadbalancer.server.port=80"
+    - "traefik.http.services.appwrite-api-service.loadbalancer.server.scheme=http"
+    # ------ HTTP → HTTPS redirect (f.example.com - functions) ------
+    - "traefik.http.routers.appwrite-functions.rule=Host(`f.example.com`)"
+    - "traefik.http.routers.appwrite-functions.entrypoints=web"
+    - "traefik.http.routers.appwrite-functions.middlewares=redirect-to-https@file"
+    - "traefik.http.routers.appwrite-functions.service=appwrite-api-service"
+    # ------ HTTPS (f.example.com - functions) ------
+    - "traefik.http.routers.appwrite-functions-secure.rule=Host(`f.example.com`)"
+    - "traefik.http.routers.appwrite-functions-secure.entrypoints=websecure"
+    - "traefik.http.routers.appwrite-functions-secure.tls=true"
+    - "traefik.http.routers.appwrite-functions-secure.tls.certresolver=letsencrypt"
+    - "traefik.http.routers.appwrite-functions-secure.service=appwrite-api-service"
+    - "traefik.http.routers.appwrite-functions-secure.middlewares=crowdsec@file,security-headers@file"
+    # ------ HTTP → HTTPS redirect (s.example.com - sites) ------
+    - "traefik.http.routers.appwrite-sites.rule=Host(`s.example.com`)"
+    - "traefik.http.routers.appwrite-sites.entrypoints=web"
+    - "traefik.http.routers.appwrite-sites.middlewares=redirect-to-https@file"
+    - "traefik.http.routers.appwrite-sites.service=appwrite-api-service"
+    # ------ HTTPS (s.example.com - sites) ------
+    - "traefik.http.routers.appwrite-sites-secure.rule=Host(`s.example.com`)"
+    - "traefik.http.routers.appwrite-sites-secure.entrypoints=websecure"
+    - "traefik.http.routers.appwrite-sites-secure.tls=true"
+    - "traefik.http.routers.appwrite-sites-secure.tls.certresolver=letsencrypt"
+    - "traefik.http.routers.appwrite-sites-secure.service=appwrite-api-service"
+    - "traefik.http.routers.appwrite-sites-secure.middlewares=crowdsec@file,security-headers@file"
+x-console-labels: &console-labels
+  labels:
+    - "traefik.enable=true"
+    # ------ HTTP → HTTPS redirect (/console on a.example.com) ------
+    - "traefik.http.routers.appwrite-console.rule=Host(`a.example.com`) && PathPrefix(`/console`)"
+    - "traefik.http.routers.appwrite-console.entrypoints=web"
+    - "traefik.http.routers.appwrite-console.middlewares=redirect-to-https@file"
+    - "traefik.http.routers.appwrite-console.service=appwrite-console-service"
+    # ------ HTTPS (/console on a.example.com) ------
+    - "traefik.http.routers.appwrite-console-secure.rule=Host(`a.example.com`) && PathPrefix(`/console`)"
+    - "traefik.http.routers.appwrite-console-secure.entrypoints=websecure"
+    - "traefik.http.routers.appwrite-console-secure.tls=true"
+    - "traefik.http.routers.appwrite-console-secure.tls.certresolver=letsencrypt"
+    - "traefik.http.routers.appwrite-console-secure.service=appwrite-console-service"
+    - "traefik.http.routers.appwrite-console-secure.middlewares=crowdsec@file,security-headers@file"
+    # Priority higher than appwrite-api so /console is matched first
+    - "traefik.http.routers.appwrite-console-secure.priority=50"
+    - "traefik.http.services.appwrite-console-service.loadbalancer.server.port=80"
+    - "traefik.http.services.appwrite-console-service.loadbalancer.server.scheme=http"
+x-realtime-labels: &realtime-labels
+  labels:
+    - "traefik.enable=true"
+    # ------ WS (plain, redirect to WSS) ------
+    - "traefik.http.routers.appwrite-realtime.rule=Host(`a.example.com`) && PathPrefix(`/v1/realtime`)"
+    - "traefik.http.routers.appwrite-realtime.entrypoints=web"
+    - "traefik.http.routers.appwrite-realtime.middlewares=redirect-to-https@file"
+    - "traefik.http.routers.appwrite-realtime.service=appwrite-realtime-service"
+    # ------ WSS ------
+    - "traefik.http.routers.appwrite-realtime-secure.rule=Host(`a.example.com`) && PathPrefix(`/v1/realtime`)"
+    - "traefik.http.routers.appwrite-realtime-secure.entrypoints=websecure"
+    - "traefik.http.routers.appwrite-realtime-secure.tls=true"
+    - "traefik.http.routers.appwrite-realtime-secure.tls.certresolver=letsencrypt"
+    - "traefik.http.routers.appwrite-realtime-secure.service=appwrite-realtime-service"
+    - "traefik.http.routers.appwrite-realtime-secure.middlewares=crowdsec@file,security-headers@file"
+    # Higher priority than the catch-all API router
+    - "traefik.http.routers.appwrite-realtime-secure.priority=100"
+    - "traefik.http.services.appwrite-realtime-service.loadbalancer.server.port=80"
+    - "traefik.http.services.appwrite-realtime-service.loadbalancer.server.scheme=http"
+services:
+  traefik:
+    profiles:
+      - disabled
+    ports: []
+    networks:
+      appwrite: {}
+  appwrite:
+    networks:
+      appwrite: {}
+      proxy: {}
+    labels: !reset []
+    <<: *appwrite-labels
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-console:
+    networks:
+      appwrite: {}
+      proxy: {}
+    labels: !reset []
+    <<: *console-labels
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-realtime:
+    networks:
+      appwrite: {}
+      proxy: {}
+    labels: !reset []
+    <<: *realtime-labels
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-audits:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-webhooks:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-deletes:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-databases:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-builds:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-certificates:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-functions:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-mails:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-messaging:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-migrations:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-task-maintenance:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-task-stats-resources:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-stats-resources:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-worker-stats-usage:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-task-scheduler-functions:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-task-scheduler-executions:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-task-scheduler-messages:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-assistant:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  appwrite-browser:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  openruntimes-executor:
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+
+  mariadb:
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      <<: *default-healthcheck
+
+  redis:
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+
+networks:
+  proxy:
+    external: true
+  appwrite:
+    name: appwrite
+  runtimes:
+    name: runtimes

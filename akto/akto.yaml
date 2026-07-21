@@ -1,0 +1,68 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  akto-mongo:
+    container_name: akto-mongo
+    restart: unless-stopped
+    image: mongo:6.0.1
+    networks:
+      - akto-network
+    volumes:
+      - akto-mongodb:/data/db
+    expose:
+      - 27017
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'ok' > /dev/null 2>&1"]
+      <<: *default-healthcheck
+  akto-api-security-dashboard:
+    image: aktosecurity/akto-api-security-dashboard:local
+    restart: unless-stopped
+    container_name: akto
+    networks:
+      - akto-network
+      - proxy
+    env_file: ./docker.env
+    expose:
+      - 8080
+    depends_on:
+      - akto-mongo
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'ok' > /dev/null 2>&1"]
+      <<: *default-healthcheck
+  akto-api-security-testing:
+    image: aktosecurity/akto-api-testing:local
+    restart: unless-stopped
+    container_name: akto-test
+    networks:
+      - akto-network
+    env_file: ./docker.env
+    depends_on:
+      - akto-mongo
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'ok' > /dev/null 2>&1"]
+      <<: *default-healthcheck
+  akto-puppeteer-replay:
+    image: aktosecurity/akto-puppeteer-replay:latest
+    restart: unless-stopped
+    container_name: akto-replay
+    networks:
+      - akto-network
+    expose:
+      - 3000
+    environment:
+      - MONGO_CONNECTION_STRING=mongodb://akto-mongo:27017/akto
+      - MONGO_DB_NAME=akto
+      - MONGO_COLLECTION_NAME=requests
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'ok' > /dev/null 2>&1"]
+      <<: *default-healthcheck
+volumes:
+  akto-mongodb:
+networks:
+  proxy:
+    external: true
+  akto-network:

@@ -7,7 +7,7 @@
 
 | Name | Description |
 |----------------|--------|
-| **Used Image** |   infisical/infisical:latest-postgres"   |
+| **Used Image** |   infisical/infisical:latest   |
 | **Description** |  ♾ Infisical is the open-source secret management platform: Sync secrets across your team/infrastructure, prevent secret leaks, and manage internal PKI  |
 | **Website** | https://infisical.com/    |
 | **Docs** |    https://infisical.com/docs/documentation/getting-started/introduction    |
