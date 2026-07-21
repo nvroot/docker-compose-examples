@@ -1,0 +1,26 @@
+services:
+  stirling-pdf:
+    image: frooodle/s-pdf:latest
+    container_name: stirling
+    restart: unless-stopped
+    volumes:
+      - ./stirling-training-data:/usr/share/tesseract-ocr/5/tessdata
+      - ./stirling-configs:/configs
+      - ./stirling-custom-files:/customFiles/
+      - ./stirling-logs:/logs/
+    environment:
+      - DOCKER_ENABLE_SECURITY=false
+    expose:
+      - 8080
+    networks:
+      - proxy
+    healthcheck:
+      test: 'curl --fail --silent http://127.0.0.1:8080/api/v1/info/status | grep -q "UP" || exit 1'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true

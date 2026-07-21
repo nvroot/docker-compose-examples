@@ -1,0 +1,21 @@
+services:
+  nuclio-dashboard:
+    image: quay.io/nuclio/dashboard:stable-arm64
+    container_name: nuclio
+    restart: unless-stopped
+    expose:
+      - 8070
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8070"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true

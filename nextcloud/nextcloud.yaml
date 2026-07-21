@@ -1,0 +1,357 @@
+services:
+  nextcloud-aio-apache:
+    depends_on:
+      nextcloud-aio-onlyoffice:
+        condition: service_started
+        required: false
+      nextcloud-aio-collabora:
+        condition: service_started
+        required: false
+      nextcloud-aio-nextcloud:
+        condition: service_started
+        required: false
+      nextcloud-aio-notify-push:
+        condition: service_started
+        required: false
+    image: nextcloud/aio-apache:latest
+    user: "33"
+    init: true
+    healthcheck:
+      start_period: 60s
+      test: /healthcheck.sh
+      interval: 60s
+      timeout: 30s
+      start_interval: 5s
+      retries: 5
+    ports:
+      - ${APACHE_IP_BINDING}:${APACHE_PORT}:${APACHE_PORT}/tcp
+      - ${APACHE_IP_BINDING}:${APACHE_PORT}:${APACHE_PORT}/udp
+    environment:
+      - NC_DOMAIN
+      - NEXTCLOUD_HOST=nextcloud-aio-nextcloud
+      - APACHE_HOST=nextcloud-aio-apache
+      - COLLABORA_HOST=nextcloud-aio-collabora
+      - APACHE_PORT
+      - ONLYOFFICE_HOST=nextcloud-aio-onlyoffice
+      - TZ=${TIMEZONE}
+      - APACHE_MAX_SIZE
+      - APACHE_MAX_TIME=${NEXTCLOUD_MAX_TIME}
+      - NOTIFY_PUSH_HOST=nextcloud-aio-notify-push
+    volumes:
+      - nextcloud_aio_nextcloud:/var/www/html:ro
+      - nextcloud_aio_apache:/mnt/data:rw
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/log/supervisord
+      - /var/run/supervisord
+      - /usr/local/apache2/logs
+      - /tmp
+      - /home/www-data
+    cap_drop:
+      - NET_RAW
+
+  nextcloud-aio-database:
+    image: nextcloud/aio-postgresql:latest
+    user: "999"
+    init: true
+    healthcheck:
+      start_period: 60s
+      test: /healthcheck.sh
+      interval: 60s
+      timeout: 30s
+      start_interval: 5s
+      retries: 5
+    expose:
+      - "5432"
+    volumes:
+      - nextcloud_aio_database:/var/lib/postgresql/data:rw
+      - nextcloud_aio_database_dump:/mnt/data:rw
+    environment:
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=nextcloud_database
+      - POSTGRES_USER=nextcloud
+      - TZ=${TIMEZONE}
+      - PGTZ=${TIMEZONE}
+    stop_grace_period: 1800s
+    restart: unless-stopped
+    shm_size: 268435456
+    read_only: true
+    tmpfs:
+      - /var/run/postgresql
+    cap_drop:
+      - NET_RAW
+
+  nextcloud-aio-nextcloud:
+    depends_on:
+      nextcloud-aio-database:
+        condition: service_started
+        required: false
+      nextcloud-aio-redis:
+        condition: service_started
+        required: false
+      nextcloud-aio-fulltextsearch:
+        condition: service_started
+        required: false
+      nextcloud-aio-imaginary:
+        condition: service_started
+        required: false
+    image: nextcloud/aio-nextcloud:latest
+    init: true
+    healthcheck:
+      start_period: 60s
+      test: /healthcheck.sh
+      interval: 60s
+      timeout: 30s
+      start_interval: 5s
+      retries: 5
+    expose:
+      - "9000"
+      - "9001"
+    volumes:
+      - nextcloud_aio_nextcloud:/var/www/html:rw
+      - ${NEXTCLOUD_DATADIR}:/mnt/ncdata:rw
+      - ${NEXTCLOUD_MOUNT}:${NEXTCLOUD_MOUNT}:rw
+      - ${NEXTCLOUD_TRUSTED_CACERTS_DIR}:/usr/local/share/ca-certificates:ro
+    environment:
+      - NEXTCLOUD_HOST=nextcloud-aio-nextcloud
+      - POSTGRES_HOST=nextcloud-aio-database
+      - POSTGRES_PORT=5432
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=nextcloud_database
+      - POSTGRES_USER=nextcloud
+      - REDIS_HOST=nextcloud-aio-redis
+      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
+      - APACHE_HOST=nextcloud-aio-apache
+      - APACHE_PORT
+      - NC_DOMAIN
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=${NEXTCLOUD_PASSWORD}
+      - NEXTCLOUD_DATA_DIR=/mnt/ncdata
+      - OVERWRITEHOST=${NC_DOMAIN}
+      - OVERWRITEPROTOCOL=https
+      - TURN_SECRET
+      - SIGNALING_SECRET
+      - ONLYOFFICE_SECRET
+      - NEXTCLOUD_MOUNT
+      - CLAMAV_ENABLED
+      - CLAMAV_HOST=nextcloud-aio-clamav
+      - ONLYOFFICE_ENABLED
+      - COLLABORA_ENABLED
+      - COLLABORA_HOST=nextcloud-aio-collabora
+      - TALK_ENABLED
+      - ONLYOFFICE_HOST=nextcloud-aio-onlyoffice
+      - UPDATE_NEXTCLOUD_APPS
+      - TZ=${TIMEZONE}
+      - IMAGINARY_ENABLED
+      - IMAGINARY_HOST=nextcloud-aio-imaginary
+      - CLAMAV_MAX_SIZE=${APACHE_MAX_SIZE}
+      - PHP_UPLOAD_LIMIT=${NEXTCLOUD_UPLOAD_LIMIT}
+      - PHP_MEMORY_LIMIT=${NEXTCLOUD_MEMORY_LIMIT}
+      - FULLTEXTSEARCH_ENABLED
+      - FULLTEXTSEARCH_HOST=nextcloud-aio-fulltextsearch
+      - PHP_MAX_TIME=${NEXTCLOUD_MAX_TIME}
+      - TRUSTED_CACERTS_DIR=${NEXTCLOUD_TRUSTED_CACERTS_DIR}
+      - STARTUP_APPS=${NEXTCLOUD_STARTUP_APPS}
+      - ADDITIONAL_APKS=${NEXTCLOUD_ADDITIONAL_APKS}
+      - ADDITIONAL_PHP_EXTENSIONS=${NEXTCLOUD_ADDITIONAL_PHP_EXTENSIONS}
+      - INSTALL_LATEST_MAJOR
+      - TALK_RECORDING_ENABLED
+      - RECORDING_SECRET
+      - FULLTEXTSEARCH_PASSWORD
+      - REMOVE_DISABLED_APPS
+      - IMAGINARY_SECRET
+      - WHITEBOARD_SECRET
+      - WHITEBOARD_ENABLED
+    stop_grace_period: 600s
+    restart: unless-stopped
+    cap_drop:
+      - NET_RAW
+
+  nextcloud-aio-notify-push:
+    image: nextcloud/aio-notify-push:latest
+    user: "33"
+    init: true
+    healthcheck:
+      start_period: 60s
+      test: /healthcheck.sh
+      interval: 60s
+      timeout: 30s
+      start_interval: 5s
+      retries: 5
+    expose:
+      - "7867"
+    volumes:
+      - nextcloud_aio_nextcloud:/nextcloud:ro
+    environment:
+      - NC_DOMAIN
+      - NEXTCLOUD_HOST=nextcloud-aio-nextcloud
+      - TZ=${TIMEZONE}
+      - REDIS_HOST=nextcloud-aio-redis
+      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
+      - POSTGRES_HOST=nextcloud-aio-database
+      - POSTGRES_PORT=5432
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=nextcloud_database
+      - POSTGRES_USER=nextcloud
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - NET_RAW
+
+  nextcloud-aio-redis:
+    image: nextcloud/aio-redis:latest
+    user: "999"
+    init: true
+    healthcheck:
+      start_period: 60s
+      test: /healthcheck.sh
+      interval: 60s
+      timeout: 30s
+      start_interval: 5s
+      retries: 5
+    expose:
+      - "6379"
+    environment:
+      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
+      - TZ=${TIMEZONE}
+    volumes:
+      - nextcloud_aio_redis:/data:rw
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - NET_RAW
+
+  nextcloud-aio-collabora:
+    command: ${ADDITIONAL_COLLABORA_OPTIONS}
+    image: nextcloud/aio-collabora:latest
+    init: true
+    healthcheck:
+      start_period: 60s
+      test: /healthcheck.sh
+      interval: 60s
+      timeout: 30s
+      start_interval: 5s
+      retries: 9
+    expose:
+      - "9980"
+    environment:
+      - aliasgroup1=https://${NC_DOMAIN}:443
+      - extra_params=--o:ssl.enable=false --o:ssl.termination=true --o:mount_jail_tree=false --o:logging.level=warning --o:home_mode.enable=true --o:remote_font_config.url=https://${NC_DOMAIN}/apps/richdocuments/settings/fonts.json --o:net.post_allow.host[0]=.+
+      - dictionaries=${COLLABORA_DICTIONARIES}
+      - TZ=${TIMEZONE}
+      - server_name=${NC_DOMAIN}
+      - DONT_GEN_SSL_CERT=1
+    restart: unless-stopped
+    profiles:
+      - collabora
+    cap_add:
+      - MKNOD
+      - SYS_ADMIN
+    cap_drop:
+      - NET_RAW
+
+  nextcloud-aio-onlyoffice:
+    image: nextcloud/aio-onlyoffice:latest
+    init: true
+    healthcheck:
+      start_period: 60s
+      test: /healthcheck.sh
+      interval: 60s
+      timeout: 30s
+      start_interval: 5s
+      retries: 9
+    expose:
+      - "80"
+    environment:
+      - TZ=${TIMEZONE}
+      - JWT_ENABLED=true
+      - JWT_HEADER=AuthorizationJwt
+      - JWT_SECRET=${ONLYOFFICE_SECRET}
+    volumes:
+      - nextcloud_aio_onlyoffice:/var/lib/onlyoffice:rw
+    restart: unless-stopped
+    profiles:
+      - onlyoffice
+    cap_drop:
+      - NET_RAW
+
+  nextcloud-aio-imaginary:
+    image: nextcloud/aio-imaginary:latest
+    user: "65534"
+    init: true
+    healthcheck:
+      start_period: 60s
+      test: /healthcheck.sh
+      interval: 60s
+      timeout: 30s
+      start_interval: 5s
+      retries: 5
+    expose:
+      - "9000"
+    environment:
+      - TZ=${TIMEZONE}
+      - IMAGINARY_SECRET
+    restart: unless-stopped
+    cap_add:
+      - SYS_NICE
+    cap_drop:
+      - NET_RAW
+    profiles:
+      - imaginary
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  nextcloud-aio-fulltextsearch:
+    image: nextcloud/aio-fulltextsearch:latest
+    init: false
+    healthcheck:
+      start_period: 60s
+      test: /healthcheck.sh
+      interval: 10s
+      timeout: 5s
+      start_interval: 5s
+      retries: 5
+    expose:
+      - 9200
+    environment:
+      - TZ=${TIMEZONE}
+      - ES_JAVA_OPTS=${FULLTEXTSEARCH_JAVA_OPTIONS}
+      - bootstrap.memory_lock=true
+      - cluster.name=nextcloud-aio
+      - discovery.type=single-node
+      - logger.org.elasticsearch.discovery=WARN
+      - http.port=9200
+      - xpack.license.self_generated.type=basic
+      - xpack.security.enabled=false
+      - FULLTEXTSEARCH_PASSWORD
+    volumes:
+      - nextcloud_aio_elasticsearch:/usr/share/elasticsearch/data:rw
+    restart: unless-stopped
+    profiles:
+      - fulltextsearch
+    cap_drop:
+      - NET_RAW
+
+volumes:
+  nextcloud_aio_apache:
+    name: nextcloud_aio_apache
+  nextcloud_aio_database:
+    name: nextcloud_aio_database
+  nextcloud_aio_database_dump:
+    name: nextcloud_aio_database_dump
+  nextcloud_aio_elasticsearch:
+    name: nextcloud_aio_elasticsearch
+  nextcloud_aio_nextcloud:
+    name: nextcloud_aio_nextcloud
+  nextcloud_aio_onlyoffice:
+    name: nextcloud_aio_onlyoffice
+  nextcloud_aio_redis:
+    name: nextcloud_aio_redis
+  nextcloud_aio_nextcloud_data:
+    name: nextcloud_aio_nextcloud_data
+
+networks:
+  default:
+    driver: bridge

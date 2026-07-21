@@ -1,0 +1,6 @@
+server:
+  sources:
+    - path: /srv # corresponds to the folder mounted above in docker-compose
+auth:
+  adminUsername: admin
+  adminPassword: admin

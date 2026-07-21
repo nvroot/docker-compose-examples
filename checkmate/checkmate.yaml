@@ -1,0 +1,77 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  client:
+    image: ghcr.io/bluewave-labs/checkmate:frontend-dist
+    container_name: checkmate-frontend
+    restart: unless-stopped
+    environment:
+      - 'UPTIME_APP_API_BASE_URL=https://uptime.site.com/api/v1'
+      - 'UPTIME_APP_CLIENT_HOST=https://uptime.site.com'
+    networks:
+      - proxy
+      - checkmate-network
+    expose:
+      - 80
+      - 443
+    depends_on:
+      server:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "nginx"]
+      <<: *default-healthcheck
+  server:
+    image: ghcr.io/bluewave-labs/checkmate:backend-dist
+    container_name: checkmate-backend
+    restart: unless-stopped
+    expose:
+      - 52345
+    networks:
+      - proxy
+      - checkmate-network
+    depends_on:
+      redis:
+        condition: service_started
+      mongodb:
+        condition: service_healthy
+    environment:
+      - DB_CONNECTION_STRING=mongodb://mongodb:27017/uptime_db?replicaSet=rs0
+      - REDIS_URL=redis://redis:6379
+      - CLIENT_HOST=https://uptime.site.com
+      - JWT_SECRET=my_secret
+    # volumes:
+    # - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "node"]
+      <<: *default-healthcheck
+  redis:
+    image: ghcr.io/bluewave-labs/checkmate:redis-dist
+    restart: unless-stopped
+    volumes:
+      - ./redis/data:/data
+    networks:
+      - checkmate-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+  mongodb:
+    image: ghcr.io/bluewave-labs/checkmate:mongo-dist
+    restart: unless-stopped
+    volumes:
+      - ./mongo/data:/data/db
+    networks:
+      - checkmate-network
+    command: ["mongod", "--quiet", "--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }" | mongosh --port 27017 --quiet
+      <<: *default-healthcheck
+networks:
+  proxy:
+    external: true
+  checkmate-network:
+    name: checkmate-network
+    driver: bridge

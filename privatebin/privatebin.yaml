@@ -1,0 +1,16 @@
+services:
+  privatebin:
+    image: privatebin/nginx-fpm-alpine:1.2.1
+    container_name: privatebin
+    restart: unless-stopped
+    read_only: true
+    volumes:
+      - './privatebin-data:/srv/data' # data volume for pastes allows pastes
+      - './conf.php:/srv/cfg/conf.php:ro' # second volume for custom configuration file
+    expose:
+      - 80
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true

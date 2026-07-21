@@ -1,0 +1,17 @@
+- rule: Read sensitive file untrusted
+  exceptions:
+    - name: postgres-healthcheck
+      fields: [proc.name, container.image.repository]
+      values:
+        - [pg_isready, postgres]
+    - name: wazuh_agent_host
+      fields: [proc.name]
+      values:
+        - [wazuh-modulesd]
+        - [wazuh-agentd]
+        - [wazuh-syscheckd]
+        - [wazuh-logcollector]
+        - [wazuh-execd]
+        - [wazuh-db]
+  override:  
+    exceptions: append

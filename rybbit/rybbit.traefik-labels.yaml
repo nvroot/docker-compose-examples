@@ -1,0 +1,28 @@
+services: 
+  rybbit-backend:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rybbit-backend.rule=Host(`site.net`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.rybbit-backend.entrypoints=websecure"
+      - "traefik.http.routers.rybbit-backend.tls=true"
+      - "traefik.http.routers.rybbit-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.rybbit-backend.service=rybbit-backend-service"
+#      - "traefik.http.routers.rybbit-backend.middlewares=crowdsec@file,security-headers@file"
+      - "traefik.http.services.rybbit-backend-service.loadbalancer.server.port=3001"
+      - "traefik.http.routers.rybbit-backend-http.rule=Host(`site.net`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.rybbit-backend-http.entrypoints=web"
+      - "traefik.http.routers.rybbit-backend-http.middlewares=redirect-to-https@file"
+
+  rybbit-client:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rybbit-client.rule=Host(`site.net`)"
+      - "traefik.http.routers.rybbit-client.entrypoints=websecure"
+      - "traefik.http.routers.rybbit-client.tls=true"
+      - "traefik.http.routers.rybbit-client.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.rybbit-client.service=rybbit-client-service"
+#      - "traefik.http.routers.rybbit-client.middlewares=crowdsec@file,security-headers@file"
+      - "traefik.http.services.rybbit-client-service.loadbalancer.server.port=3002"
+      - "traefik.http.routers.rybbit-client-http.rule=Host(`site.net`)"
+      - "traefik.http.routers.rybbit-client-http.entrypoints=web"
+      - "traefik.http.routers.rybbit-client-http.middlewares=redirect-to-https@file"

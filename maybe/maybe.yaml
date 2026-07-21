@@ -1,0 +1,88 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+x-rails-env: &rails_env
+  SECRET_KEY_BASE: ${SECRET_KEY_BASE:-keybase}
+  SELF_HOSTED: "true"
+  RAILS_FORCE_SSL: "false"
+  RAILS_ASSUME_SSL: "false"
+  GOOD_JOB_EXECUTION_MODE: async
+  DB_HOST: postgres
+  POSTGRES_DB: maybe_db
+  POSTGRES_USER: maybe
+  POSTGRES_PASSWORD: changeme
+  DB_PORT: 5432
+  REDIS_URL: redis://redis:6379/1
+# NOTE: enabling OpenAI will incur costs when you use AI-related features in the app (chat, rules).  Make sure you have set appropriate spend limits on your account before adding this.
+  OPENAI_ACCESS_TOKEN: ${OPENAI_ACCESS_TOKEN}
+services:
+  maybe:
+    image: ghcr.io/maybe-finance/maybe:latest
+    container_name: maybe
+    restart: unless-stopped
+    volumes:
+      - maybe:/rails/storage
+    environment:
+      <<: *rails_env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - proxy
+      - maybe-network
+    expose:
+      - 3000
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000"]
+      <<: *default-healthcheck
+  worker:
+    image: ghcr.io/maybe-finance/maybe:latest
+    command: bundle exec sidekiq
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *rails_env
+    networks:
+      - maybe-network
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - maybe_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=maybe
+      - POSTGRES_DB=maybe_db
+      - POSTGRES_PASSWORD=changeme
+    networks:
+      - maybe-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    networks:
+      - maybe-network
+    volumes:
+      - 'maybe-redis:/data'
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      <<: *default-healthcheck
+networks:
+  proxy:
+    external: true
+  maybe-network:
+volumes:
+  maybe:
+  maybe_db:
+  maybe-redis:

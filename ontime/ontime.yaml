@@ -1,0 +1,27 @@
+services:
+  ontime:
+    image: getontime/ontime:v3.8.0
+    container_name: ontime
+    restart: unless-stopped
+    ports:
+      - 4001
+      - 8888
+      - 9999
+    volumes:
+      - ontime-data:/data/
+    environment:
+      - TZ=UTC
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "node"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true
+volumes:
+  ontime-data:

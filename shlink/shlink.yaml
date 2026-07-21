@@ -1,0 +1,44 @@
+services:
+  shlink:
+    image: shlinkio/shlink:stable
+    container_name: shlink
+    restart: unless-stopped
+    environment:
+      - DEFAULT_DOMAIN=url.site.com
+      - INITIAL_API_KEY=changeme
+    expose:
+      - 8080
+    networks:
+      - proxy
+    volumes:
+      - shlink-data:/etc/shlink/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/rest/v3/health"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  shlink-web:
+    image: shlinkio/shlink-web-client:stable
+    container_name: shlink-web
+    restart: unless-stopped
+    environment:
+      - SHLINK_SERVER_API_KEY=changeme
+      - SHLINK_SERVER_URL=https://url.site.com
+    networks:
+      - proxy
+    expose:
+      - 8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true
+volumes:
+  shlink-data:

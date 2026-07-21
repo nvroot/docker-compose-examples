@@ -1,0 +1,23 @@
+services:
+  portainer:
+    image: 'portainer/portainer-ee:alpine'
+    container_name: portainer
+    restart: unless-stopped
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - 'portainer-data:/data'
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9000/"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
+volumes:
+    portainer-data:
+

@@ -1,0 +1,73 @@
+name: documenso
+services:
+  documenso:
+    image: documenso/documenso-arm64:latest
+    # image: documenso/documenso-amd64:latest
+    container_name: documenso
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NEXTAUTH_SECRET=mustbeatleast32charactersliketht
+      - NEXT_PRIVATE_ENCRYPTION_KEY=mustbeatleast32charactersliketht
+      - NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY=mustbeatleast32charactersliketht
+      - NEXTAUTH_URL=https://documenso.site.com
+      - NEXT_PUBLIC_WEBAPP_URL=https://documenso.site.com
+      - NEXT_PRIVATE_INTERNAL_WEBAPP_URL=http://documenso:3000
+      - NEXT_PRIVATE_DATABASE_URL=postgres://documenso-user:changeme@documenso-db:5432/documenso
+      - NEXT_PRIVATE_DIRECT_DATABASE_URL=postgres://documenso-user:changeme@documenso-db:5432/documenso
+      - NEXT_PRIVATE_SMTP_TRANSPORT=smtp-auth
+      - NEXT_PRIVATE_SMTP_HOST=smtp.site.com
+      - NEXT_PRIVATE_SMTP_PORT=465
+      - NEXT_PRIVATE_SMTP_USERNAME=admin@site.com
+      - NEXT_PRIVATE_SMTP_PASSWORD=mailpass
+      - NEXT_PRIVATE_SMTP_SECURE=false
+      - NEXT_PRIVATE_SMTP_FROM_NAME=documenso
+      - NEXT_PRIVATE_SMTP_FROM_ADDRESS=admin@site.com
+      - NEXT_PUBLIC_DOCUMENT_SIZE_UPLOAD_LIMIT=50
+      - NEXT_PUBLIC_DISABLE_SIGNUP=false
+      - NEXT_PRIVATE_SIGNING_LOCAL_FILE_PATH=/opt/documenso/cert.p12
+      - NEXT_PRIVATE_SIGNING_PASSPHRASE=
+    expose:
+      - 3000
+    volumes:
+      - ./config/cert.p12:/opt/documenso/cert.p12
+    depends_on:
+      documenso-db:
+        condition: service_healthy
+    networks:
+      - proxy
+      - documenso-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  documenso-db:
+    image: "postgres:17"
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=documenso
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=documenso-user
+      - POSTGRES_PORT=5432
+    volumes:
+      - "documenso-pg:/var/lib/postgresql/data"
+    networks:
+      - documenso-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  documenso-network:
+    name: documenso-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  documenso-pg:

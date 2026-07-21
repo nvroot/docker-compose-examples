@@ -1,0 +1,81 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  infisical:
+    image: infisical/infisical:latest
+    container_name: infisical
+    restart: unless-stopped
+    environment:
+      - SITE_URL=https://key.site.com
+      - NODE_ENV=production
+      - ENCRYPTION_KEY=encryptionkey # Changeme openssl rand -hex 16
+      - AUTH_SECRET=auth-secret # Changeme openssl rand -base64 32
+      - DB_CONNECTION_URI=postgres://infisical-user:changeme@infisical-db:5432/infisical
+      - REDIS_URL=redis://infisical-redis:6379
+      - TELEMETRY_ENABLED=false
+      - SMTP_HOST=maildomain.com
+      - SMTP_PORT=465
+      - SMTP_FROM_ADDRESS=mail@site.com
+      - SMTP_FROM_NAME=Infisical
+      - SMTP_USERNAME=mail@site.com
+      - SMTP_PASSWORD=changeme
+      - SMTP_IGNORE_TLS=false
+      - SMTP_REQUIRE_TLS=true
+      - SMTP_TLS_REJECT_UNAUTHORIZED=true
+    expose:
+      - 8080
+    networks:
+      - infisical-network
+      - proxy
+    depends_on:
+      infisical-db:
+        condition: service_healthy
+      infisical-redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/api/status || exit 1"]
+      <<: *default-healthcheck
+
+  infisical-redis:
+    image: redis:8
+    container_name: infisical-redis
+    restart: unless-stopped
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - infisical-network
+    volumes:
+      - infisical-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+  infisical-db:
+    image: postgres:18-alpine
+    container_name: infisical-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=infisical-user
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=infisical
+    volumes:
+      - infisical-pg:/var/lib/postgresql
+    networks:
+      - infisical-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+
+volumes:
+  infisical-pg: {}
+  infisical-redis: {}
+
+networks:
+  infisical-network:
+    name: infisical-network
+    driver: bridge
+  proxy:
+    external: true

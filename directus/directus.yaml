@@ -1,0 +1,80 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+name: directus
+services:
+  directus:
+    image: directus/directus:11
+    container_name: directus
+    restart: unless-stopped
+    volumes:
+      - directus-uploads:/directus/uploads
+      - directus-extensions:/directus/extensions
+      - directus-templates:/directus/templates
+    environment:
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASSWORD=changeme
+      - KEY=secret-key
+      - SECRET=key-secret
+      - DB_CLIENT=postgres
+      - DB_HOST=postgresql
+      - DB_PORT=5432
+      - DB_DATABASE=directus
+      - DB_USER=directus-user
+      - DB_PASSWORD=changeme
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - WEBSOCKETS_ENABLED=true
+    networks:
+      - directus-network
+      - proxy
+    expose:
+      - 8055
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8055/admin/login"]
+      <<: *default-healthcheck
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  postgresql:
+    image: postgis/postgis:17-3.5-alpine
+    restart: unless-stopped
+    volumes:
+      - directus-pg:/var/lib/postgresql/data
+    networks:
+      - directus-network
+    environment:
+      - POSTGRES_USER=directus-user
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=directus
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - directus-redis:/data
+    networks:
+      - directus-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+volumes:
+  directus-uploads:
+  directus-extensions:
+  directus-templates:
+  directus-pg:
+  directus-redis:
+networks:
+  directus-network:
+    name: directus-network
+    driver: bridge
+  proxy:
+    external: true

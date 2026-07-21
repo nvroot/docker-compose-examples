@@ -1,0 +1,117 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  rybbit-caddy:
+    image: caddy:2-alpine
+    container_name: rybbit-caddy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:80"]
+      <<: *default-healthcheck
+    networks:
+      - proxy
+      - rybbit-network
+    volumes:
+      - type: bind
+        source: ./Caddyfile
+        target: /etc/caddy/Caddyfile
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.5
+    restart: unless-stopped
+    expose:
+      - 8123
+      - 9000
+    volumes:
+      - rybbit-clickhouse:/var/lib/clickhouse
+      - rybbit-config:/etc/clickhouse-server/config.d
+    networks:
+      - rybbit-network
+    environment:
+      - CLICKHOUSE_DB=rybbit
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=changemeclickhouse
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8123/ping" ]
+      <<: *default-healthcheck
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=rybbit
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=rybbit-user
+      - POSTGRES_PORT=5432
+    networks:
+      - rybbit-network
+    volumes:
+      - rybbit-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      <<: *default-healthcheck
+
+  rybbit-backend:
+    image: ghcr.io/rybbit-io/rybbit-backend:latest
+    container_name: rybbit-backend
+    restart: unless-stopped
+    expose:
+      - 3001
+    environment:
+      - NODE_ENV=production
+      - CLICKHOUSE_HOST=http://clickhouse:8123
+      - CLICKHOUSE_DB=rybbit
+      - CLICKHOUSE_PASSWORD=changemeclickhouse
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rybbit
+      - POSTGRES_USER=rybbit-user
+      - POSTGRES_PASSWORD=changeme
+      - BETTER_AUTH_SECRET=authsecret
+      - DOMAIN_NAME=rybbit.site.com
+      - BASE_URL=https://rybbit.site.com
+      - DISABLE_SIGNUP=false
+    networks:
+      - proxy
+      - rybbit-network
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3001/api/health" ]
+      <<: *default-healthcheck
+
+  rybbit-client:
+    image: ghcr.io/rybbit-io/rybbit-client:latest
+    container_name: rybbit-client
+    restart: unless-stopped
+    expose:
+      - 3002
+    environment:
+      - NODE_ENV=production
+      - DOMAIN_NAME=rybbit.site.com
+      - NEXT_PUBLIC_BACKEND_URL=https://rybbit.site.com
+      - NEXT_PUBLIC_DISABLE_SIGNUP=false
+    networks:
+      - proxy
+      - rybbit-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep -f next-server" ]
+      <<: *default-healthcheck
+networks:
+  proxy:
+    external: true
+  rybbit-network:
+    name: rybbit-network
+    driver: bridge
+volumes:
+  rybbit-clickhouse:
+  rybbit-config:
+  rybbit-pg:

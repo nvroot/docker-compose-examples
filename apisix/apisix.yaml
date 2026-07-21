@@ -1,0 +1,39 @@
+x-env: &env
+  networks:
+    - apisix-network
+  restart: unless-stopped
+  healthcheck:
+    test: [ "CMD", "echo", "health" ]
+    interval: 60s
+    timeout: 20s
+    retries: 5
+    start_period: 60s
+    start_interval: 5s  
+services:
+  apisix:
+    image: "apache/apisix:latest"
+    <<: *env
+    volumes:
+      - ./config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    depends_on:
+      - etcd
+    expose:
+      - "9180/tcp" # Admin API + Dashboard UI port
+      - "9080/tcp" # HTTP API Gateway port
+      - "9091/tcp" # Prometheus metrics
+      - "9443/tcp" # HTTPS port
+  etcd:
+    image: bitnamilegacy/etcd:3.6
+    <<: *env
+    environment:
+      ETCD_DATA_DIR: /etcd_data
+      ETCD_ENABLE_V2: "true"
+      ETCD_ROOT_PASSWORD: your_password
+      ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+    expose:
+      - 2379/tcp
+networks:
+  apisix-network:
+    name: apisix-network
+    driver: bridge

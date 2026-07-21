@@ -1,0 +1,35 @@
+services:
+  code-server:
+    image: 'linuxserver/code-server:latest'
+    container_name: code-server
+    restart: unless-stopped
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=UTC
+      - PASSWORD=changeme
+      - SUDO_PASSWORD=changeme
+      - PROXY_DOMAIN=code.example.com
+      - DEFAULT_WORKSPACE=/config/workspace
+    volumes:
+      - code-config:/config
+    expose:
+      - 8443
+    networks:
+      - proxy
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - 'http://127.0.0.1:8443'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true
+volumes:
+  code-config:

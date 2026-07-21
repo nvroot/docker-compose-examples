@@ -1,0 +1,19 @@
+apisix:
+  node_listen: 9080
+  enable_ipv6: false
+deployment:
+  admin:
+    enable_admin_ui: true
+    allow_admin:
+      - 0.0.0.0/0
+    admin_key:
+      - name: "admin"
+        key: changeme
+        role: admin
+  etcd:
+    host:
+      - "http://etcd:2379"
+    prefix: "/apisix"
+    timeout: 30
+    user: root
+    password: your_password

@@ -1,0 +1,85 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  2fauth:
+    image: 2fauth/2fauth
+    container_name: 2fauth
+    restart: unless-stopped
+    volumes:
+      - 2fauth-data:/2fauth
+    expose:
+      - 8000
+    environment:
+      - 'APP_NAME=2fauth'
+      - APP_ENV=production
+      - APP_TIMEZONE=Asia/Baku
+      - APP_DEBUG=false
+      - SITE_OWNER=admin@site.com
+      - APP_KEY=SomeRandomStringOf32CharsExactly  # php artisan key:generate
+      - APP_URL=https://pass.site.com
+      - IS_DEMO_APP=false
+      - LOG_CHANNEL=daily
+      - LOG_LEVEL=notice
+      - DB_DATABASE="/srv/database/database.sqlite"
+      - CACHE_DRIVER=file
+      - SESSION_DRIVER=file
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=smpt.exapmle.com
+      - MAIL_PORT=465
+      - MAIL_USERNAME=admin@site.com
+      - MAIL_PASSWORD=mailpass
+      - MAIL_ENCRYPTION=ssl
+      - MAIL_FROM_NAME=2fauth
+      - MAIL_FROM_ADDRESS=admin@site.com
+      - MAIL_VERIFY_SSL_PEER=false
+      - THROTTLE_API=60
+      - LOGIN_THROTTLE=5
+      - AUTHENTICATION_GUARD=web-guard
+      - AUTHENTICATION_LOG_RETENTION=365
+      - AUTH_PROXY_HEADER_FOR_USER=null
+      - AUTH_PROXY_HEADER_FOR_EMAIL=null
+      - PROXY_LOGOUT_URL=null
+      - WEBAUTHN_NAME=2FAuth
+      - WEBAUTHN_ID=null
+      - WEBAUTHN_USER_VERIFICATION=preferred
+      - TRUSTED_PROXIES=null
+      - PROXY_FOR_OUTGOING_REQUESTS=null
+      - CONTENT_SECURITY_POLICY=false
+      - BROADCAST_DRIVER=log
+      - QUEUE_DRIVER=sync
+      - SESSION_LIFETIME=120
+      - REDIS_HOST=2fauth-redis
+      - REDIS_PASSWORD=null
+      - REDIS_PORT=6379
+      - MIX_ENV=local
+    networks:
+      - proxy
+      - 2fauth-network
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "php"]
+      <<: *default-healthcheck
+  2fauth-redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - 2fauth-redis:/data
+    networks:
+      - 2fauth-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+networks:
+  proxy:
+    external: true
+  2fauth-network:
+    name: 2fauth-network
+    driver: bridge
+volumes:
+  2fauth-data:
+    driver: local
+  2fauth-redis:
+    driver: local

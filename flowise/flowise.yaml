@@ -1,0 +1,111 @@
+services:
+  flowise:
+    image: flowiseai/flowise:latest
+    container_name: flowise
+    restart: unless-stopped
+    environment:
+      - DEBUG=false
+      - DISABLE_FLOWISE_TELEMETRY=true
+      - PORT=3001
+      - DATABASE_PATH=/root/.flowise
+      - APIKEY_PATH=/root/.flowise
+      - SECRETKEY_PATH=/root/.flowise
+      - LOG_LEVEL=info
+      - LOG_PATH=/root/.flowise/logs
+      - BLOB_STORAGE_PATH=/root/.flowise/storage
+      - DATABASE_TYPE=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_HOST=postgres
+      - DATABASE_NAME=flowise
+      - DATABASE_USER=flowise-user
+      - DATABASE_PASSWORD=changeme
+      - PGSSLMODE=require
+      - FLOWISE_USERNAME=username
+      - FLOWISE_PASSWORD=password
+    expose:
+      - 3001
+    networks:
+      - flowise-network
+      - proxy
+    volumes:
+      - flowise-data:/root/.flowise
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001 || exit 1"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=flowise-user
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=flowise
+    networks:
+      - flowise-network
+    volumes:
+      - flowise-pg:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "pg_isready -h localhost -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    networks:
+      - flowise-network
+    volumes:
+      - flowise-redis:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "redis-cli -h localhost -p 6379 ping"
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    environment:
+      - QDRANT__SERVICE__API_KEY=qdrant-api-key
+    networks:
+      - flowise-network
+      - proxy
+    volumes:
+      - flowise-qdrant:/qdrant/storage
+    expose:
+      - 6333
+    healthcheck:
+      test: ["CMD", "/qdrant/qdrant", "-V"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  flowise-network:
+    name: flowise-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  flowise-data:
+  flowise-pg:
+  flowise-redis:
+  flowise-qdrant:

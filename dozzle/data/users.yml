@@ -1,0 +1,5 @@
+users:
+  admin:
+    email: admin@example.com
+    name: Admin
+    password: hashed-password

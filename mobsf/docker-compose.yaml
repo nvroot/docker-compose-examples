@@ -1,0 +1,17 @@
+services:
+  mobsf:
+    image: opensecurity/mobile-security-framework-mobsf:v4.3.2
+    container_name: mobsf
+    restart: unless-stopped
+    expose:
+      - 8000
+    volumes:
+      - mobsf-data:/home/mobsf/.MobSF
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
+volumes:
+  mobsf-data:
+  mobsf-db:

@@ -1,0 +1,86 @@
+services:
+  anything-llm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: anythingllm
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+    volumes:
+      - 'anythingllm-storage:/app/server/storage'
+      - 'anythingllm-hotdir:/app/collector/hotdir'
+      - 'anythingllm-outputs:/app/collector/outputs'
+    environment:
+      - 'DISABLE_TELEMETRY=true'
+      - 'SERVER_PORT=3001'
+      - 'STORAGE_DIR=/app/server/storage'
+      - 'UID=1000'
+      - 'GID=1000'
+      - 'PASSWORDMINCHAR=8'
+      - 'PASSWORDMAXCHAR=250'
+      - 'PASSWORDLOWERCASE=1'
+      - 'PASSWORDUPPERCASE=1'
+      - 'PASSWORDNUMERIC=1'
+      - 'PASSWORDSYMBOL=1'
+      - 'PASSWORDREQUIREMENTS=4'
+      - 'VECTOR_DB=qdrant'
+      - 'QDRANT_ENDPOINT=http://anything-qdrant:6333'
+      - 'QDRANT_API_KEY=qdrant-api-key'
+      - 'SIG_KEY=mustbeexactry32characterslikeths'
+      - 'SIG_SALT=mustbeexactry32characterslikeths'
+      - 'JWT_SECRET=atleast12character' # Only needed if AUTH_TOKEN is set
+      - 'AUTH_TOKEN=auth-token'
+      - 'LLM_PROVIDER=ollama'
+      - 'OLLAMA_BASE_PATH=http://ollama-llm:11434'
+    expose:
+      - 3001
+    networks:
+      - proxy
+      - anythingllm-network
+  anything-qdrant:
+    image: qdrant/qdrant:latest
+    container_name: anything-qdrant
+    restart: unless-stopped
+    environment:
+      - 'QDRANT__SERVICE__API_KEY=qdrant-api-key'
+    expose:
+      - 6333
+    volumes:
+      - 'anythingllm-qdrant:/qdrant/storage'
+    networks:
+      - anythingllm-network
+    healthcheck:
+      test: ["CMD", "/qdrant/qdrant", "-V"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  ollama-llm:
+    image: "ollama/ollama:latest"
+    container_name: ollama-llm
+    restart: unless-stopped
+    volumes:
+      - "anythingllm-ollama:/root/.ollama"
+    expose:
+      - 11434
+    networks:
+      - anythingllm-network
+      - proxy
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+networks:
+  proxy:
+    external: true
+  anythingllm-network:
+    name: anythingllm-network
+    driver: bridge
+volumes:
+  anythingllm-qdrant:
+  anythingllm-storage:
+  anythingllm-hotdir:
+  anythingllm-outputs:
+  anythingllm-ollama:

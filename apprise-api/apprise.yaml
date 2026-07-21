@@ -1,0 +1,25 @@
+services:
+  apprise-api:
+    image: 'linuxserver/apprise-api:latest'
+    container_name: apprise
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Baku
+    volumes:
+      - './config:/config'
+    expose:
+      - 8000
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true

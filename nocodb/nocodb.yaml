@@ -1,0 +1,70 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  nocodb: 
+    image: nocodb/nocodb:latest
+    container_name: nocodb
+    restart: unless-stopped
+    environment: 
+      - NC_DB=pg://nocodb-db:5432?u=nocodbuser&p=changeme&d=nocodb
+      - NC_AUTH_JWT_SECRET=some-secret
+      - NC_JWT_EXPIRES_IN=10h
+      - NC_ADMIN_EMAIL=admin@site.com
+      - NC_ADMIN_PASSWORD=Admin-pass
+      - NC_PUBLIC_URL=noco.site.com
+      - NC_REDIS_URL=redis://nocodb-redis:6379/0
+      - NC_DISABLE_TELE=true
+    expose: 
+      - 8080
+    networks: 
+      - proxy
+      - nocodb-network
+    volumes: 
+      - nocodb-data:/usr/app/data
+    depends_on: 
+      nocodb-db: 
+        condition: service_healthy
+      nocodb-redis: 
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/health || exit 1"]
+      <<: *default-healthcheck
+  nocodb-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=nocodb
+      - POSTGRES_USER=nocodbuser
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_PORT=5432
+    volumes:
+      - nocodb-pg:/var/lib/postgresql/data
+    networks:
+      - nocodb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+  nocodb-redis:
+    image: redis:alpine
+    restart: unless-stopped
+    volumes:
+      - nocodb-redis:/data
+    networks:
+      - nocodb-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+networks:
+  nocodb-network:
+    name: nocodb-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  nocodb-data:
+  nocodb-pg:
+  nocodb-redis:

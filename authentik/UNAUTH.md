@@ -1,0 +1,4 @@
+# Traefik:
+```
+/dashboard/manifest.json
+```

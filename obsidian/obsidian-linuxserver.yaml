@@ -1,0 +1,25 @@
+services:
+  obsidian:
+    image: linuxserver/obsidian:latest
+    container_name: obsidian
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - CUSTOM_USER=username
+      - PASSWORD=password
+      - NO_DECOR=true
+    volumes:
+      - ./config:/config
+    expose:
+      - 3000
+      - 3001
+    devices:
+      - /dev/dri:/dev/dri #optional
+    shm_size: "1gb"
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true

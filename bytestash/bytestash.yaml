@@ -1,0 +1,56 @@
+services:
+  bytestash:
+    image: ghcr.io/jordan-dalby/bytestash:latest
+    container_name: bytestash
+    restart: unless-stopped
+    expose:
+      - 5000
+    environment:
+      # e.g. write /bytestash for a domain such as my.domain/bytestash, leave blank in every other case
+      - BASE_PATH=
+      # Either provide JWT_SECRET directly or use JWT_SECRET_FILE for Docker secrets
+      #- JWT_SECRET_FILE=/run/secrets/jwt
+      - JWT_SECRET=your-secret
+      # how long the token lasts, examples: "2 days", "10h", "7d", "1m", "60s"
+      - TOKEN_EXPIRY=24h
+      # is this bytestash instance open to new accounts being created?
+      - ALLOW_NEW_ACCOUNTS=true
+      # Should debug mode be enabled? Essentially enables logging, in most cases leave this as false
+      - DEBUG=false
+      # Should we use accounts at all? When enabled, it will be like starting a fresh account so export your snippets, no login required
+      - DISABLE_ACCOUNTS=false
+      # Should internal accounts be disabled?
+      - DISABLE_INTERNAL_ACCOUNTS=false
+
+      # Optional: Enable OIDC for Single Sign On
+      - OIDC_ENABLED=false
+      # Optional: Display name for users signing in with SSO, will default to Single Sign-on
+      - OIDC_DISPLAY_NAME=
+      # Your OIDC issuer url, e.g. https://authentik.mydomain.com/application/o/bytestash/ for authentik
+      - OIDC_ISSUER_URL=
+      # Your OIDC client ID, you can find it in your app provider
+      - OIDC_CLIENT_ID=
+      # Your OIDC client secret, again, found in the app provider
+      - OIDC_CLIENT_SECRET=
+      # The OIDC scopes to request, e.g. "openid profile email groups"
+      - OIDC_SCOPES=
+    volumes:
+      - ./data:/data/snippets
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5000/"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+# Uncomment to use docker secrets
+#    secrets:
+#      - jwt
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
+#secrets:
+#  jwt:
+#    file: ./secrets/jwt.txt

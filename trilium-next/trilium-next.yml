@@ -1,0 +1,25 @@
+services:
+  trilium:
+    image: 'triliumnext/notes:latest'
+    container_name: trilium-next
+    restart: unless-stopped
+    environment:
+      - TRILIUM_DATA_DIR=/home/node/trilium-data
+    expose:
+      - 8080
+    volumes:
+      - 'trilium-data:/home/node/trilium-data'
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "node /usr/src/app/docker_healthcheck.js"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 10s
+networks:
+  proxy:
+    external: true
+volumes:
+  trilium-data:

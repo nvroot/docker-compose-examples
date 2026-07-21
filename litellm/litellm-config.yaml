@@ -1,0 +1,36 @@
+general_settings:
+  proxy_batch_write_at: 60
+
+litellm_settings:
+  set_verbose: false
+  # json_logs: true
+  # log_raw_request_response: true
+  # turn_off_message_logging: false
+  # redact_user_api_key_info: false
+  drop_params: true
+  # max_budget: 100
+  # budget_duration: 30d
+  num_retries: 3
+  request_timeout: 600
+  telemetry: false
+  cache: false
+  
+model_list:
+  # OpenAI
+  - model_name: gpt-4
+    litellm_params:
+      model: openai/gpt-4
+      api_key: ${OPENAI_API_KEY}
+      api_base: ${OPENAI_API_BASE}
+
+  - model_name: gpt-4o
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: ${OPENAI_API_KEY}
+      api_base: ${OPENAI_API_BASE}
+
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: ${OPENAI_API_KEY}
+      api_base: ${OPENAI_API_BASE}

@@ -1,0 +1,78 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  activepieces:
+    image: "ghcr.io/activepieces/activepieces:latest"
+    container_name: activepieces
+    restart: unless-stopped
+    environment:
+      - AP_API_KEY=change-api-key
+      - AP_ENCRYPTION_KEY=change-ecryption-key
+      - 'AP_ENGINE_EXECUTABLE_PATH=dist/packages/engine/main.js'
+      - AP_ENVIRONMENT=prod
+      - AP_EXECUTION_MODE=UNSANDBOXED
+      - AP_FRONTEND_URL=https://activepieces.example.com
+      - AP_JWT_SECRET=change-jwt-secret
+      - AP_POSTGRES_DATABASE=activepieces
+      - AP_POSTGRES_HOST=postgres
+      - AP_POSTGRES_PASSWORD=changeme
+      - AP_POSTGRES_PORT=5432
+      - AP_POSTGRES_USERNAME=activepiecesuser
+      - AP_REDIS_HOST=redis
+      - AP_REDIS_PORT=6379
+      - AP_SANDBOX_RUN_TIME_SECONDS=600
+      - AP_TELEMETRY_ENABLED=false
+      - 'AP_TEMPLATES_SOURCE_URL=${AP_TEMPLATES_SOURCE_URL:-https://cloud.activepieces.com/api/v1/flow-templates}'
+      - AP_TRIGGER_DEFAULT_POLL_INTERVAL=5
+      - AP_WEBHOOK_TIMEOUT_SECONDS=30
+    expose:
+      - 80
+    networks:
+      - proxy
+      - activepieces-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80"]
+      <<: *default-healthcheck
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=activepieces
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=activepiecesuser
+      - POSTGRES_PORT=5432
+    volumes:
+      - "activepieces-db:/var/lib/postgresql/data"
+    networks:
+      - activepieces-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+  redis:
+    image: "redis:latest"
+    restart: unless-stopped
+    volumes:
+      - "activepieces-redis:/data"
+    networks:
+      - activepieces-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+volumes:
+  activepieces-redis:
+  activepieces-db:
+networks:
+  activepieces-network:
+    name: activepieces-network
+    driver: bridge
+  proxy:
+    external: true

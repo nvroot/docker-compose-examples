@@ -1,0 +1,91 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  formbricks:
+    image: ghcr.io/formbricks/formbricks:latest
+    container_name: formbricks
+    restart: unless-stopped
+    expose:
+      - 3000
+    volumes:
+      - formbricks-upload:/home/nextjs/apps/web/uploads/
+    networks:
+      - proxy
+      - formbricks-network
+    environment:
+      - WEBAPP_URL=https://form.site.com
+      - NEXTAUTH_URL=https://form.site.com
+      - DATABASE_URL=postgresql://formbricks-user:changeme@formbricks-db:5432/formbricks?schema=public
+      - NEXTAUTH_SECRET= # openssl rand -hex 32
+      - ENCRYPTION_KEY= # openssl rand -hex 32
+      - CRON_SECRET= # openssl rand -hex 32
+      - LOG_LEVEL=info
+      - MAIL_FROM=admin@site.com
+      - MAIL_FROM_NAME=Formbricks
+      - SMTP_HOST=smtp.site.com
+      - SMTP_PORT=465
+      - SMTP_USER=admin@site.com
+      - SMTP_PASSWORD=mailpass
+      - SMTP_AUTHENTICATED=1
+      - SMTP_SECURE_ENABLED=1
+      - SMTP_REJECT_UNAUTHORIZED_TLS=1
+      - EMAIL_VERIFICATION_DISABLED=0
+      - PASSWORD_RESET_DISABLED=1
+      - EMAIL_AUTH_DISABLED=0
+      - INVITE_DISABLED=1
+      - DOCKER_CRON_ENABLED=1
+      - S3_FORCE_PATH_STYLE=0
+      - RATE_LIMITING_DISABLED=0
+      - REDIS_URL=redis://formbricks-redis:6379
+      - USER_MANAGEMENT_MINIMUM_ROLE=manager
+      - SESSION_MAX_AGE=86400
+    depends_on:
+      formbricks-db:
+        condition: service_healthy
+      formbricks-redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000"]
+      <<: *default-healthcheck
+  formbricks-db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=formbricks
+      - POSTGRES_PASSWORD=changeme # Change
+      - POSTGRES_USER=formbricks-user
+      - POSTGRES_PORT=5432
+    volumes:
+      - formbricks-pg:/var/lib/postgresql/data
+    networks:
+      - formbricks-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+  formbricks-redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - formbricks-redis:/data
+    networks:
+      - formbricks-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+networks:
+  formbricks-network:
+    name: formbricks-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  formbricks-pg:
+    driver: local
+  formbricks-redis:
+    driver: local
+  formbricks-upload:
+    driver: local

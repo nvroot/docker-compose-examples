@@ -1,0 +1,20 @@
+services:
+  woodpecker-agent:
+    image: woodpeckerci/woodpecker-agent:latest
+    container_name: woodpecker-agent
+    command: agent
+    restart: unless-stopped
+    environment:
+      - WOODPECKER_SERVER=woodpecker-server:9000
+      - WOODPECKER_BACKEND=docker
+      - WOODPECKER_AGENT_SECRET=some-secret
+    networks:
+      - woodpecker-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - woodpecker-agent:/etc/woodpecker
+networks:
+  woodpecker-network:
+    external: true
+volumes:
+  woodpecker-agent:

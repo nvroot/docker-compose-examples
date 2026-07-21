@@ -1,0 +1,82 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  langflow:
+    image: langflowai/langflow:latest
+    container_name: langflow
+    restart: unless-stopped
+    pull_policy: always
+    expose:
+      - 7860
+    depends_on:
+      langflow-pg:
+        condition: service_healthy
+    environment:
+      - LANGFLOW_DATABASE_URL=postgresql://langflow-user:changeme@langflow-pg:5432/langflow
+      - LANGFLOW_CONFIG_DIR=app/langflow
+      - DO_NOT_TRACK=true
+      - LANGFLOW_WORKERS=1
+      - LANGFLOW_WORKER_TIMEOUT=60000
+      - LANGFLOW_PORT=7860
+      - LANGFLOW_LOG_LEVEL=info
+      - LANGFLOW_CACHE_TYPE=redis
+      - LANGFLOW_REDIS_HOST=langflow-redis
+      - LANGFLOW_REDIS_PORT=6379
+      - LANGFLOW_REDIS_DB=0
+      - LANGFLOW_REDIS_CACHE_EXPIRE=60000
+      - LANGFLOW_SUPERUSER=superuser
+      - LANGFLOW_SUPERUSER_PASSWORD=userpass
+      - LANGFLOW_STORE=True
+      - LANGFLOW_STORE_ENVIRONMENT_VARIABLES=True
+      - LANGFLOW_SECRET_KEY=changeme # python3 -c "from secrets import token_urlsafe; print(token_urlsafe(32))"
+      - LANGFLOW_AUTO_SAVING=True
+      - LANGFLOW_AUTO_SAVING_INTERVAL=1000
+      - LANGFLOW_AUTO_LOGIN=False
+      - LANGFLOW_NEW_USER_IS_ACTIVE=False
+    volumes:
+      - langflow-data:/app/langflow
+    networks:
+      - langflow-network
+      - proxy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:7860"]
+      <<: *default-healthcheck
+  langflow-pg:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=langflow
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=langflow-user
+      - POSTGRES_PORT=5432
+    volumes:
+      - "langflow-pg:/var/lib/postgresql/data"
+    networks:
+      - langflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+  langflow-redis:
+    image: "redis:latest"
+    restart: unless-stopped
+    volumes:
+      - "langflow-redis:/data"
+    networks:
+      - langflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+networks:
+  proxy:
+    external: true
+  langflow-network:
+    name: langflow-network
+    driver: bridge
+volumes:
+  langflow-data:
+  langflow-pg:
+  langflow-redis:

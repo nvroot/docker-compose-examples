@@ -1,0 +1,166 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  rustfs:
+    image: rustfs/rustfs
+    environment:
+      RUSTFS_ACCESS_KEY: ${MINIO_ROOT_USER}
+      RUSTFS_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CORS_ALLOWED_ORIGINS: "*"
+      RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: "*"
+    security_opt:
+      - "no-new-privileges:true"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://rustfs:9000/health" ]
+      <<: *default-healthcheck
+    volumes:
+      - rustfs-data:/data
+
+  rustfs-createbucket:
+    image: rustfs/rc
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -ec "
+      rc alias set supa-rustfs http://rustfs:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      rc mb --ignore-existing supa-rustfs/${GLOBAL_S3_BUCKET}
+      "
+  storage:
+    depends_on:
+      rustfs-createbucket:
+        condition: service_completed_successfully
+      rustfs:
+        condition: service_healthy
+    environment:
+      STORAGE_BACKEND: s3
+      GLOBAL_S3_ENDPOINT: http://rustfs:9000
+      GLOBAL_S3_PROTOCOL: http
+      GLOBAL_S3_FORCE_PATH_STYLE: true
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "pgrep", "-f", "node" ]
+      <<: *default-healthcheck
+  imgproxy:
+    healthcheck:
+      test: [ "CMD", "imgproxy", "health" ]
+      <<: *default-healthcheck
+  studio:
+    ports: !reset []
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://studio:3000/api/platform/profile').then((r) => {if (r.status !== 200) throw new Error(r.status)})"
+        ]
+      <<: *default-healthcheck
+  kong:
+    ports: !reset []
+    expose:
+      - 8000/tcp
+      - 8443/tcp
+  auth:
+    ports: !reset []
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9999/health"
+        ]
+      <<: *default-healthcheck
+  rest:
+    ports: !reset []
+    healthcheck:
+      test:
+        [ "CMD", "postgrest", "-v" ]
+      <<: *default-healthcheck
+  realtime:
+    ports: !reset []
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-sSfL",
+          "--head",
+          "-o",
+          "/dev/null",
+          "-H",
+          "Authorization: Bearer ${ANON_KEY}",
+          "http://localhost:4000/api/tenants/realtime-dev/health"
+        ]
+      <<: *default-healthcheck
+  meta:
+    ports: !reset []
+  functions:
+    ports: !reset []
+    healthcheck:
+      test:
+        [ "CMD", "echo", "health" ]
+      <<: *default-healthcheck
+  analytics:
+    image: supabase/logflare:1.36.1
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "http://localhost:4000/health"
+        ]
+      <<: *default-healthcheck
+  db:
+    ports: !reset []
+    healthcheck:
+      test:
+        [
+        "CMD",
+        "pg_isready",
+        "-U",
+        "postgres",
+        "-h",
+        "localhost"
+        ]
+      <<: *default-healthcheck
+  vector:
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://vector:9001/health"
+        ]
+      <<: *default-healthcheck
+  supavisor:
+    ports: !reset []
+    expose:
+      - ${POSTGRES_PORT}
+      - ${POOLER_PROXY_PORT_TRANSACTION}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-sSfL",
+          "--head",
+          "-o",
+          "/dev/null",
+          "http://127.0.0.1:4000/api/health"
+        ]
+      <<: *default-healthcheck
+volumes:
+  rustfs-data:

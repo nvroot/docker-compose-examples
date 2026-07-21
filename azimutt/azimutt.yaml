@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=azimutt-user
+      - POSTGRES_DB=azimutt
+    volumes:
+      - 'azimutt-db:/var/lib/postgresql/data'
+    networks:
+      - azimutt-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  azimutt:
+    container_name: azimutt
+    platform: linux/amd64
+    image: ghcr.io/azimuttapp/azimutt:main
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - SENTRY=false
+      - PHX_SERVER=true
+      - 'PHX_HOST=https://azimutt.example.com'
+      - PORT=4000
+      - 'DATABASE_URL=ecto://azimutt-user:changeme@postgres/azimutt'
+      - 'SECRET_KEY_BASE=secret-key-base'
+      - AUTH_PASSWORD=false
+      - FILE_STORAGE_ADAPTER=local
+      - SKIP_ONBOARDING_FUNNEL=true
+      - SKIP_EMAIL_CONFIRMATION=true
+      - PUBLIC_SITE=true
+    networks:
+      - azimutt-network
+      - proxy
+    expose:
+      - 4000
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  azimutt-network:
+    name: azimutt-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  azimutt-db:

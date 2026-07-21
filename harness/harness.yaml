@@ -1,0 +1,58 @@
+services:
+  harness:
+    image: harness/harness:latest
+    container_name: harness
+    restart: unless-stopped
+    environment:
+      - GITNESS_URL_BASE=http://harness.site.com
+      - GITNESS_DATABASE_DRIVER=postgres
+      - GITNESS_DATABASE_DATASOURCE=postgres://harness-user:changeme@harness-db:5432/harness?sslmode=disable
+      - GITNESS_PRINCIPAL_ADMIN_EMAIL=mail@site.com
+      - GITNESS_PRINCIPAL_ADMIN_PASSWORD=admin_password
+      - GITNESS_USER_SIGNUP_ENABLED=false
+      - GITNESS_CI_PARALLEL_WORKERS=2
+      - GITNESS_ENCRYPTER_SECRET=mustbeexactry32characterlikethat
+    expose:
+      - 3000
+      - 3022
+    networks:
+      - harness-network
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - harness-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  harness-db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=harness
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=harness-user
+      - POSTGRES_PORT=5432
+    volumes:
+      - harness-pg:/var/lib/postgresql/data
+    networks:
+      - harness-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true
+  harness-network:
+    name: harness-network
+    driver: bridge
+volumes:
+  harness-data:
+  harness-pg:

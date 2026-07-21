@@ -1,0 +1,62 @@
+services:
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    restart: unless-stopped
+    command:
+      - serve
+    environment:
+      - 'NTFY_BASE_URL=${NTFY_BASE_URL}'
+      - 'NTFY_AUTH_DEFAULT_ACCESS=${NTFY_AUTH_DEFAULT_ACCESS}'
+      - 'TZ=${TZ}'
+      - 'NTFY_BEHIND_PROXY=${NTFY_BEHIND_PROXY}'
+      - 'NTFY_CACHE_FILE=${NTFY_CACHE_FILE}'
+      - 'NTFY_AUTH_USERS=${NTFY_AUTH_USERS}'
+      - 'NTFY_AUTH_FILE=${NTFY_AUTH_FILE}'
+      - 'NTFY_UPSTREAM_BASE_URL=${NTFY_UPSTREAM_BASE_URL}'
+      - 'NTFY_ENABLE_SIGNUP=${NTFY_ENABLE_SIGNUP}'
+      - 'NTFY_ENABLE_LOGIN=${NTFY_ENABLE_LOGIN}'
+      - 'NTFY_CACHE_DURATION=${NTFY_CACHE_DURATION}'
+      - 'NTFY_ATTACHMENT_TOTAL_SIZE_LIMIT=${NTFY_ATTACHMENT_TOTAL_SIZE_LIMIT}'
+      - 'NTFY_ATTACHMENT_FILE_SIZE_LIMIT=${NTFY_ATTACHMENT_FILE_SIZE_LIMIT}'
+      - 'NTFY_ATTACHMENT_EXPIRY_DURATION=${NTFY_ATTACHMENT_EXPIRY_DURATION}'
+      - 'NTFY_SMTP_SENDER_ADDR=${NTFY_SMTP_SENDER_ADDR}'
+      - 'NTFY_SMTP_SENDER_USER=${NTFY_SMTP_SENDER_USER}'
+      - 'NTFY_SMTP_SENDER_PASS=${NTFY_SMTP_SENDER_PASS}'
+      - 'NTFY_SMTP_SENDER_FROM=${NTFY_SMTP_SENDER_FROM}'
+      - 'NTFY_KEEPALIVE_INTERVAL=${NTFY_KEEPALIVE_INTERVAL}'
+      - 'NTFY_MANAGER_INTERVAL=${NTFY_MANAGER_INTERVAL}'
+      - 'NTFY_VISITOR_MESSAGE_DAILY_LIMIT=${NTFY_VISITOR_MESSAGE_DAILY_LIMIT}'
+      - 'NTFY_VISITOR_ATTACHMENT_DAILY_BANDWIDTH_LIMIT=${NTFY_VISITOR_ATTACHMENT_DAILY_BANDWIDTH_LIMIT}'
+      - 'NTFY_UPSTREAM_ACCESS_TOKEN=${NTFY_UPSTREAM_ACCESS_TOKEN}'
+      - 'NTFY_WEB_PUSH_PUBLIC_KEY=${NTFY_WEB_PUSH_PUBLIC_KEY}'
+      - 'NTFY_WEB_PUSH_PRIVATE_KEY=${NTFY_WEB_PUSH_PRIVATE_KEY}'
+      - 'NTFY_WEB_PUSH_EMAIL_ADDRESS=${NTFY_WEB_PUSH_EMAIL_ADDRESS}'
+      - 'NTFY_WEB_PUSH_FILE=${NTFY_WEB_PUSH_FILE}'
+      - 'NTFY_SMTP_SERVER_LISTEN=${NTFY_SMTP_SERVER_LISTEN}'
+      - 'NTFY_SMTP_SERVER_DOMAIN=${NTFY_SMTP_SERVER_DOMAIN}'
+    volumes:
+      - 'cache:/var/cache/ntfy'
+      - 'db:/var/lib/ntfy/'
+    networks:
+      - ntfy-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'wget -q --tries=1 http://localhost:80/v1/health -O - | grep -Eo ''"healthy"\s*:\s*true'' || exit 1'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  ntfy-network:
+    name: ntfy-network
+    driver: bridge
+volumes:
+  cache:
+    name: ntfy-cache
+    driver: local
+  db:
+    name: ntfy-db
+    driver: local

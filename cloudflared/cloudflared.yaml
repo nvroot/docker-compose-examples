@@ -1,0 +1,20 @@
+services:
+  cloudflared:
+    container_name: cloudflare-tunnel
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - 'TUNNEL_TOKEN=token'
+    networks:
+      - cloudflared
+    healthcheck:
+      test: ["CMD", "cloudflared", "version"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  cloudflared:
+    external: true

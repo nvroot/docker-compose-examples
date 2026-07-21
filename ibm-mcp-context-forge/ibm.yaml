@@ -1,0 +1,137 @@
+name: mcpnet
+x-default-healthcheck: &default-healthcheck
+  interval: 120s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+x-env: &env
+  restart: unless-stopped
+  networks:
+    - mcpnet-network
+services:
+  mcpnet:
+    image: ghcr.io/ibm/mcp-context-forge:0.7.0
+    container_name: mcpnet
+    restart: unless-stopped
+    expose:
+      - 4444
+    networks:
+      - proxy
+      - mcpnet-network
+    environment:
+      - APP_DOMAIN
+      - ALLOWED_ORIGINS='["http://localhost", "http://localhost:4444", "$APP_DOMAIN"]'
+      - AUTH_REQUIRED
+      - HOST
+      - PORT
+      - ENVIRONMENT
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - CACHE_TYPE
+      - REDIS_URL
+      - JWT_ALGORITHM
+      - JWT_SECRET_KEY
+      - JWT_AUDIENCE
+      - JWT_ISSUER
+      - JWT_AUDIENCE_VERIFICATION
+      - EMAIL_AUTH_ENABLED
+      - PLATFORM_ADMIN_EMAIL
+      - PLATFORM_ADMIN_PASSWORD
+      - PLATFORM_ADMIN_FULL_NAME
+      - REQUIRE_TOKEN_EXPIRATION
+      - SECURITY_HEADERS_ENABLED
+      - CORS_ALLOW_CREDENTIALS
+      - AUTH_ENCRYPTION_SECRET
+      - AUTO_CREATE_PERSONAL_TEAMS
+      - MCP_CLIENT_AUTH_ENABLED
+      - TRUST_PROXY_AUTH
+      - PROXY_USER_HEADER
+      - MCPGATEWAY_UI_ENABLED
+      - MCPGATEWAY_ADMIN_API_ENABLED
+      - MCPGATEWAY_BULK_IMPORT_ENABLED
+      - MCPGATEWAY_A2A_ENABLED
+      - MCPGATEWAY_CATALOG_ENABLED
+      - MCPGATEWAY_CATALOG_FILE
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "app"]
+      <<: *default-healthcheck
+
+  postgres:
+    image: postgres:17-alpine
+    <<: *env
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    volumes:
+      - mcpnet-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      <<: *default-healthcheck
+
+  redis:
+    image: redis:latest
+    <<: *env
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+
+#  mcpnet-pgadmin:
+#    image: dpage/pgadmin4:latest
+#    container_name: mcpnet-pgadmin
+#    <<: *env
+#    environment:
+#      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+#      - PGADMIN_DEFAULT_PASSWORD=changeme
+#    expose:
+#      - 5050
+#    volumes:
+#      - mcpnet-pgadmindata:/var/lib/pgadmin
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#
+#  mcpnet-redisinsight:
+#    image: redis/redisinsight:latest
+#    container_name: mcpnet-redisinsight
+#    <<: *env
+#    expose:
+#      - 5540
+#    depends_on:
+#      redis:
+#        condition: service_started
+#    volumes:
+#      - mcpnet-redisinsight:/data
+#    environment:
+#      - RI_REDIS_HOST=redis
+#      - RI_REDIS_PORT=6379
+#      - RI_REDIS_USERNAME=default
+#      - RI_APP_HOST=0.0.0.0
+#      - RI_APP_PORT=5540
+#
+networks:
+  mcpnet-network:
+    name: mcpnet-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  mcpnet-pgdata:
+    name: mcpnet-pgdata
+    driver: local
+  mcpnet-pgadmindata:
+    name: mcpnet-pgadmindata
+    driver: local
+  mcpnet-redisinsight:
+    name: mcpnet-redisinsight
+    driver: local

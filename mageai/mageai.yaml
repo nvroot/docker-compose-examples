@@ -1,0 +1,60 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  mage:
+    image: mageai/mageai:latest
+    container_name: mageai
+    restart: unless-stopped
+    command: mage start magic
+    environment:
+      - POSTGRES_DB=mageai
+      - POSTGRES_USER=mageaiuser
+      - POSTGRES_PASSWORD=chageme
+      - POSTGRES_HOST=mageai-db
+      - PG_HOST_PORT=5432
+      - REQUIRE_USER_AUTHENTICATION=1
+      - MAGE_ACCESS_TOKEN_EXPIRY_TIME=2592000
+      - DEFAULT_OWNER_EMAIL=admin@site.com
+      - DEFAULT_OWNER_USERNAME=admin
+      - DEFAULT_OWNER_PASSWORD=adminpass
+    expose:
+      - 6789
+    networks:
+      - cloudflared
+      - mageai-network
+    volumes:
+      - mageai-data:/home/src/
+    depends_on:
+      mageai-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'mage' || exit 1"]
+      <<: *default-healthcheck
+  mageai-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=mageai
+      - POSTGRES_USER=mageaiuser
+      - POSTGRES_PASSWORD=chageme
+      - POSTGRES_PORT=5432
+    volumes:
+      - "mageai-pg:/var/lib/postgresql/data"
+    networks:
+      - mageai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+networks:
+  mageai-network:
+    name: mageai-network
+    driver: bridge
+  cloudflared:
+    external: true
+volumes:
+  mageai-data:
+  mageai-pg:

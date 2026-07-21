@@ -1,0 +1,20 @@
+services:
+  dockge:
+    image: louislam/dockge:1
+    container_name: dockge
+    restart: unless-stopped
+    user: root
+    expose:
+      - 5001
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/app/data
+      - /root/.docker/:/root/.docker
+      - /home/ubuntu/:/home/ubuntu/
+    environment:
+      - DOCKGE_STACKS_DIR=/home/ubuntu/
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,32 @@
+# Provider Configuration  
+default_provider = "openrouter"  
+default_model = "openrouter:free"  
+api_key = "${OPENROUTER_API_KEY}"  
+  
+# Reliability Configuration with Fallback  
+[reliability]  
+fallback_providers = ["openrouter"]  
+provider_retries = 2  
+provider_backoff_ms = 500  
+  
+[reliability.model_fallbacks]  
+"openrouter:free" = ["nvidia/nemotron-3-nano-30b-a3b:free"]  
+  
+# Channel Configuration  
+[channels_config]  
+message_timeout_secs = 300  
+  
+[channels_config.telegram]  
+bot_token = "${TELEGRAM_BOT_TOKEN}"  
+allowed_users = ["username1"]  
+  
+# Gateway Configuration  
+[gateway]  
+host = "0.0.0.0"  
+port = 42617  
+allow_public_bind = true  
+  
+# Agent Configuration  
+[agent]  
+max_tool_iterations = 10  
+compact_context = true

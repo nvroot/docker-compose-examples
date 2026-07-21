@@ -1,0 +1,68 @@
+services:
+  lowcoder:
+    image: lowcoderorg/lowcoder-ce:latest
+    container_name: lowcoder
+    restart: unless-stopped
+    expose:
+      - 3000
+      - 3443
+      - 27017
+    environment:
+      LOWCODER_PUBLIC_URL: "http://localhost:3000/"
+      LOWCODER_REDIS_ENABLED: "true"
+      LOWCODER_MONGODB_ENABLED: "true"
+      LOWCODER_MONGODB_EXPOSED: "true"
+      LOWCODER_API_SERVICE_ENABLED: "true"
+      LOWCODER_NODE_SERVICE_ENABLED: "true"
+      LOWCODER_FRONTEND_ENABLED: "true"
+      LOWCODER_PUID: "1000"
+      LOWCODER_PGID: "1000"
+      LOWCODER_MAX_ORGS_PER_USER: 100
+      LOWCODER_MAX_MEMBERS_PER_ORG: 1000
+      LOWCODER_MAX_GROUPS_PER_ORG: 100
+      LOWCODER_MAX_APPS_PER_ORG: 1000
+      LOWCODER_MAX_DEVELOPERS: 50
+      #LOWCODER_MONGODB_URL: "mongodb://lowcoder:secret123@mongodb/lowcoder?authSource=admin"
+      LOWCODER_MONGODB_URL: "mongodb://localhost:27017/lowcoder?authSource=admin"
+      LOWCODER_REDIS_URL: "redis://localhost:6379"
+      LOWCODER_EMAIL_SIGNUP_ENABLED: "true"
+      LOWCODER_EMAIL_AUTH_ENABLED: "true"
+      LOWCODER_CREATE_WORKSPACE_ON_SIGNUP: "true"
+      LOWCODER_DB_ENCRYPTION_PASSWORD: "password"
+      LOWCODER_DB_ENCRYPTION_SALT: "password"
+      LOWCODER_CORS_DOMAINS: "*"
+      LOWCODER_API_KEY_SECRET: "apikey"
+      LOWCODER_PLUGINS_DIR: "../plugins"
+      LOWCODER_API_RATE_LIMIT: 50
+      LOWCODER_API_SERVICE_URL: "http://localhost:8080"
+      LOWCODER_NODE_SERVICE_URL: "http://localhost:6060"
+      LOWCODER_MAX_REQUEST_SIZE: 20m
+      LOWCODER_MAX_QUERY_TIMEOUT: 120
+      LOWCODER_WORKSPACE_MODE: SAAS
+      LOWCODER_MARKETPLACE_PRIVATE_MODE: "true"
+      LOWCODER_ADMIN_SMTP_HOST: smtp.exmaple.com
+      LOWCODER_ADMIN_SMTP_PORT: 465
+      LOWCODER_ADMIN_SMTP_USERNAME: admin@example.com
+      LOWCODER_ADMIN_SMTP_PASSWORD: mailpass
+      LOWCODER_ADMIN_SMTP_AUTH: "true"
+      LOWCODER_ADMIN_SMTP_SSL_ENABLED: "true"
+      LOWCODER_ADMIN_SMTP_STARTTLS_ENABLED: "false"
+      LOWCODER_ADMIN_SMTP_STARTTLS_REQUIRED: "false"
+      LOWCODER_EMAIL_NOTIFICATIONS_SENDER: admin@example.com
+      LOWCODER_SUPERUSER_USERNAME: admin@example.com
+      LOWCODER_SUPERUSER_PASSWORD: superpassword
+    volumes:
+      - ./lowcoder-stacks:/lowcoder-stacks
+      - ./lowcoder-stacks/assets:/lowcoder/assets
+    networks:
+      - lowcoder-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/health"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  lowcoder-network:
+    external: true

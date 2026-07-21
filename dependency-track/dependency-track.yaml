@@ -1,0 +1,94 @@
+services:
+  apiserver:
+    image: dependencytrack/apiserver:latest
+    container_name: dtrack-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - 'ALPINE_DATABASE_MODE=external'
+      - 'ALPINE_DATABASE_URL=jdbc:postgresql://postgres:5432/dtrack'
+      - 'ALPINE_DATABASE_DRIVER=org.postgresql.Driver'
+      - 'ALPINE_DATABASE_USERNAME=dtrack'
+      - 'ALPINE_DATABASE_PASSWORD=dtrack'
+      - 'ALPINE_CORS_ALLOW_ORIGIN=*'
+      - 'ALPINE_CORS_ALLOW_METHODS=GET, POST, PUT, DELETE, OPTIONS'
+      - 'ALPINE_CORS_ALLOW_HEADERS=Origin, Content-Type, Authorization, X-Requested-With, Content-Length, Accept, Origin, X-Api-Key, X-Total-Count, *'
+      - 'ALPINE_CORS_EXPOSE_HEADERS=Origin, Content-Type, Authorization, X-Requested-With, Content-Length, Accept, Origin, X-Api-Key, X-Total-Count'
+      - 'ALPINE_CORS_ALLOW_CREDENTIALS=true'
+      - 'ALPINE_CORS_ENABLED=true'
+      - 'ALPINE_CORS_MAX_AGE=3600'
+      - 'ALPINE_HTTP_PROXY_ADDRESS=dtrack.site.com'
+      - 'ALPINE_ENFORCE_AUTHENTICATION=true'
+#      - 'ALPINE_OIDC_ENABLED=true'
+#      - 'ALPINE_OIDC_CLIENT_ID=dependency-track'
+#      - 'ALPINE_OIDC_ISSUER=https://auth.example.com/auth/realms/example'
+#      - 'ALPINE_OIDC_USERNAME_CLAIM=preferred_username'
+#      - 'ALPINE_OIDC_TEAMS_CLAIM=groups'
+#      - 'ALPINE_OIDC_USER_PROVISIONING=true'
+#      - 'ALPINE_OIDC_TEAM_SYNCHRONIZATION=true'
+    deploy:
+      resources:
+        limits:
+          memory: 12288m
+        reservations:
+          memory: 8192m
+      restart_policy:
+        condition: on-failure
+    networks:
+      - proxy
+      - dtrack-network
+    expose:
+    - 8080
+    volumes:
+    - 'dtrack-data:/data'
+
+  frontend:
+    image: dependencytrack/frontend
+    container_name: dtrack
+    restart: unless-stopped
+    depends_on:
+      apiserver:
+        condition: service_healthy
+    environment:
+      - 'API_BASE_URL=https://dtrack.site.com'
+    networks:
+      - proxy
+      - dtrack-network
+    expose:
+      - 8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - 'POSTGRES_DB=dtrack'
+      - 'POSTGRES_USER=dtrack'
+      - 'POSTGRES_PASSWORD=dtrack'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+    networks:
+      - dtrack-network
+    volumes:
+    - "dtrack-pg:/var/lib/postgresql/data"
+networks:
+  dtrack-network:
+    name: dtrack-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  dtrack-data: {}
+  dtrack-pg: {}

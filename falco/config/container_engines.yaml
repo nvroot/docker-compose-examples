@@ -1,0 +1,13 @@
+container_engines:  
+  docker:  
+    enabled: true  
+  podman:  
+    enabled: false  
+  cri:  
+    enabled: false  
+  lxc:  
+    enabled: false  
+  libvirt_lxc:  
+    enabled: false  
+  bpm:  
+    enabled: false

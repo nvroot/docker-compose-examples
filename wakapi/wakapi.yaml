@@ -1,0 +1,66 @@
+services:
+  wakapi:
+    image: 'ghcr.io/muety/wakapi:alpine'
+    container_name: wakapi
+    restart: unless-stopped
+    environment:
+      - WAKAPI_DB_TYPE=postgres
+      - WAKAPI_DB_NAME=wakapi
+      - WAKAPI_DB_USER=wakapi
+      - WAKAPI_DB_HOST=wakapi-db
+      - WAKAPI_DB_PORT=5432
+      - WAKAPI_DB_PASSWORD=changeme
+      - WAKAPI_PASSWORD_SALT=salt
+      - WAKAPI_ALLOW_SIGNUP=true
+      - WAKAPI_MAIL_ENABLED=true
+      - WAKAPI_MAIL_PROVIDER=smtp
+      - WAKAPI_MAIL_SENDER=Wakapi
+      - WAKAPI_MAIL_SMTP_HOST=smtp.example.com
+      - WAKAPI_MAIL_SMTP_PORT=465
+      - WAKAPI_MAIL_SMTP_USER=admin@example.com
+      - WAKAPI_MAIL_SMTP_PASS=mail_password
+      - WAKAPI_MAIL_SMTP_TLS=true
+      - 'WAKAPI_LEADERBOARD_GENERATION_TIME=0 0 * * * *'
+    volumes:
+      - 'wakapi-data:/data'
+    expose:
+      - 3000
+    networks:
+      - wakapi-network
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  wakapi-db:
+    image: 'postgres:17.0-alpine'
+    restart: unless-stopped
+    volumes:
+      - 'wakapi-pg:/var/lib/postgresql/data'
+    environment:
+      - 'POSTGRES_USER=wakapi'
+      - 'POSTGRES_PASSWORD=changeme'
+      - 'POSTGRES_DB=${POSTGRES_DB:-wakapi}'
+    networks:
+      - wakapi-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -h localhost -U $${POSTGRES_USER} -d $${POSTGRES_DB}'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  wakapi-network:
+    name: wakapi-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  wakapi-data:
+  wakapi-pg:

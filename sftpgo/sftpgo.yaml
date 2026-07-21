@@ -1,0 +1,67 @@
+services:
+  sftpgo:
+    image: drakkan/sftpgo:v2-plugins
+    container_name: sftpgo
+    restart: unless-stopped
+    user: 1000:1000
+    expose:
+      - 8080  # HTTP
+      - 443   # HTTPS
+      - 2022  # SFTP
+      - 5007  # WEBDAV
+    environment:
+      - SFTPGO_WEBDAVD__BINDINGS__0__PORT=5007
+      - SFTPGO_DATA_PROVIDER__DRIVER=postgresql
+      - SFTPGO_DATA_PROVIDER__NAME=sftpgo
+      - SFTPGO_DATA_PROVIDER__HOST=sftpgo-db
+      - SFTPGO_DATA_PROVIDER__PORT=5432
+      - SFTPGO_DATA_PROVIDER__USERNAME=sftpgo-user
+      - SFTPGO_DATA_PROVIDER__PASSWORD=changeme
+      - SFTPGO_COMMON__DEFENDER__ENABLED=true
+      - SFTPGO_COMMON__DEFENDER__BAN_TIME=15
+      - SFTPGO_COMMON__DEFENDER__BAN_TIME_INCREMENT=100
+      - SFTPGO_COMMON__DEFENDER__THRESHOLD=5
+      - SFTPGO_COMMON__DEFENDER__OBSERVATION_TIME=15
+    networks:
+      - sftpgo-network
+      - proxy
+    volumes:
+      - sftpgo-data:/srv/sftpgo
+    depends_on:
+      sftpgo-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  sftpgo-db:
+    image: "postgres:17"
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=sftpgo
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=sftpgo-user
+      - POSTGRES_PORT=5432
+    volumes:
+      - "sftpgo-db:/var/lib/postgresql/data"
+    networks:
+      - sftpgo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+volumes:
+  sftpgo-data:
+  sftpgo-db:
+networks:
+  sftpgo-network:
+    name: sftpgo-network
+    driver: bridge
+  proxy:
+    external: true

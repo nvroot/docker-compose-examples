@@ -1,0 +1,75 @@
+services:
+  sonarqube:
+    image: 'sonarqube:community'
+    restart: unless-stopped
+    container_name: sonarqube
+    environment:
+      - 'SONAR_JDBC_URL=jdbc:postgresql://postgresql:5432/sonar'
+      - SONAR_JDBC_USERNAME=sonar-user
+      - SONAR_JDBC_PASSWORD=changeme
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - 'sonarqube-data:/opt/sonarqube'
+      - 'sonarqube-conf:/opt/sonarqube/conf'
+      - 'sonarqube-extensions:/opt/sonarqube/extensions'
+      - 'sonarqube-logs:/opt/sonarqube/logs'
+      - 'sonarqube-bundled-plugins:/opt/sonarqube/lib/bundled-plugins'
+    expose:
+      - 9000
+    networks:
+      - proxy
+      - sonarqube-network
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - '-q'
+        - '--spider'
+        - 'http://127.0.0.1:9000'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1000M
+        reservations:
+          memory: 500M
+    memswap_limit: 5G
+    mem_limit: 1000M
+  postgresql:
+    image: 'postgres:16-alpine'
+    restart: unless-stopped
+    volumes:
+      - 'sonarqube-db:/var/lib/postgresql/data'
+    environment:
+      - POSTGRES_USER=sonar-user
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=sonar
+    networks:
+      - sonarqube-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true
+  sonarqube-network:
+volumes:
+  sonarqube-data:
+  sonarqube-conf:
+  sonarqube-extensions:
+  sonarqube-logs:
+  sonarqube-bundled-plugins:
+  sonarqube-db:

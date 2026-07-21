@@ -1,0 +1,90 @@
+volumes:
+  kestra-db:
+    driver: local
+  kestra-data:
+    driver: local
+networks:
+  proxy:
+    external: true
+  kestra-network:
+    name: kestra-network
+    driver: bridge
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    volumes:
+      - kestra-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: kestra
+      POSTGRES_USER: kestra-user
+      POSTGRES_PASSWORD: changeme
+    networks:
+      - kestra-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  kestra:
+    image: kestra/kestra:latest
+    restart: unless-stopped
+    pull_policy: always
+    container_name: kestra
+    # Note that this setup with a root user is intended for development purpose.
+    # Our base image runs without root, but the Docker Compose implementation needs root to access the Docker socket
+    # To run Kestra in a rootless mode in production, see: https://kestra.io/docs/installation/podman-compose
+    user: "root"
+    command: server standalone
+    volumes:
+      - kestra-data:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/kestra-wd:/tmp/kestra-wd
+    environment:
+      KESTRA_CONFIGURATION: |
+        datasources:
+          postgres:
+            url: jdbc:postgresql://postgres:5432/kestra
+            driverClassName: org.postgresql.Driver
+            username: kestra-user
+            password: changeme
+        kestra:
+          server:
+            basicAuth:
+              enabled: true
+              username: "admin@site.com" # it must be a valid email address
+              password: changepass
+          repository:
+            type: postgres
+          storage:
+            type: local
+            local:
+              basePath: "/app/storage"
+          queue:
+            type: postgres
+          tasks:
+            tmpDir:
+              path: /tmp/kestra-wd/tmp
+          url: http://kestra.site.com
+    expose:
+      - 8080
+      - 8081
+    networks:
+      - proxy
+      - kestra-network
+    depends_on:
+      postgres:
+        condition: service_started
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - 'http://127.0.0.1:8080'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s

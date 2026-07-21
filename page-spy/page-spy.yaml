@@ -1,0 +1,22 @@
+services:
+  page-spy-web:
+    image: huolalatech/page-spy-web:release
+    container_name: pagespy
+    restart: unless-stopped
+    networks:
+      - proxy
+    expose:
+      - 6752
+    volumes:
+      - ./log:/app/log
+      - ./data:/app/data
+    healthcheck:
+      test: ['CMD', 'pgrep', '-f', 'app']
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true

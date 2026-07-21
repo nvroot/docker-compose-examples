@@ -1,0 +1,106 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  affine:
+    image: ghcr.io/toeverything/affine-graphql:stable
+    container_name: affine
+    restart: unless-stopped
+    environment:
+      - REDIS_SERVER_HOST=affine-redis
+      - DATABASE_URL=postgresql://affine-user:changeme@affine-db:5432/affine # Change
+      - AFFINE_SERVER_HTTPS=true
+      - 'AFFINE_SERVER_EXTERNAL_URL=https://affine.site.com' # Change
+      - 'AFFINE_SERVER_HOST=https://affine.site.com' # Change
+      - 'AFFINE_CONFIG_PATH=/root/.affine/config'
+      - NODE_ENV=production
+      - MAILER_HOST=smtp.site.com # Change
+      - MAILER_PORT=465 # Change
+      - MAILER_USER=admin@site.ch # Change
+      - MAILER_SECURE=true
+      - MAILER_PASSWORD=mailpass # Change
+      - MAILER_SENDER=admin@site.ch # Change
+      - AFFINE_INDEXER_ENABLED=false
+    expose:
+      - 3010
+    volumes:
+      - ./storage:/root/.affine/storage
+      - ./config:/root/.affine/config
+    networks:
+      - affine-network
+      - proxy
+    depends_on:
+      affine-redis:
+        condition: service_healthy
+      affine-db:
+        condition: service_healthy
+      affine_migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "echo", "health"]
+      <<: *default-healthcheck
+  affine_migrations:
+    image: ghcr.io/toeverything/affine-graphql:stable
+    container_name: affine_migrations
+    restart: on-failure
+    volumes:
+      - ./storage:/root/.affine/storage
+      - ./config:/root/.affine/config
+    command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
+    environment:
+      - REDIS_SERVER_HOST=affine-redis
+      - DATABASE_URL=postgresql://affine-user:changeme@affine-db:5432/affine # Change
+      #- 'NODE_OPTIONS=--import=./scripts/register.js'
+      - AFFINE_SERVER_HTTPS=true
+      - 'AFFINE_SERVER_EXTERNAL_URL=https://affine.site.com' # Change
+      - 'AFFINE_SERVER_HOST=https://affine.site.com' # Change
+      - 'AFFINE_CONFIG_PATH=/root/.affine/config'
+      - 'AFFINE_UPLOAD_PATH=/root/.affine/storage'
+      - NODE_ENV=production
+      - AFFINE_INDEXER_ENABLED=false
+    networks:
+      - affine-network
+    depends_on:
+      affine-db:
+        condition: service_healthy
+      affine-redis:
+        condition: service_healthy
+  affine-redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - affine-redis:/data
+    networks:
+      - affine-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+  affine-db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=affine
+      - POSTGRES_PASSWORD=changeme # Change
+      - POSTGRES_USER=affine-user
+      - POSTGRES_PORT=5432
+      - POSTGRES_INITDB_ARGS=--data-checksums
+      # - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - "affine-pg:/var/lib/postgresql/data"
+    networks:
+      - affine-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+networks:
+  affine-network:
+    name: affine-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  affine-pg:
+  affine-redis:

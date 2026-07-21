@@ -1,0 +1,88 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  falco:
+    image: falcosecurity/falco:master
+    container_name: falco
+    restart: unless-stopped
+    command: [
+      "falco",
+      "-o", "json_output=true",
+      "-o", "json_include_output_property=true",
+      "-o", "log_level=warning"
+      ]
+    environment:
+      - FALCO_DRIVER=modern_ebpf
+    cap_add:
+      - SYS_ADMIN
+      - SYS_PTRACE
+      - SYS_RESOURCE
+      - NET_ADMIN
+    security_opt:
+      - apparmor:unconfined
+      - seccomp:unconfined
+    volumes:
+      - /boot:/boot:ro
+      - /etc:/host/etc:ro
+      - /lib/modules:/lib/modules:ro
+      - /proc:/host/proc:ro
+      - /sys/kernel/debug:/sys/kernel/debug:ro
+      - /sys/kernel/debug/tracing:/sys/kernel/tracing:ro
+      - /sys/kernel/tracing:/sys/kernel/tracing:ro
+      - /sys/kernel/btf:/sys/kernel/btf:ro
+      - /usr:/host/usr:ro
+      - /usr/src:/usr/src:ro
+      - /var/run/docker.sock:/host/var/run/docker.sock:ro
+      - ./config/http_output.yaml:/etc/falco/config.d/http_output.yaml
+      - ./config/container_engines.yaml:/etc/falco/config.d/container_engines.yaml:ro
+      - ./config/falco_rules.local.yaml:/etc/falco/falco_rules.local.yaml:ro
+    networks:
+      - falco-network
+      - cloudflared
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f falco"]
+      <<: *default-healthcheck
+  falco-sidekick:
+    image: falcosecurity/falcosidekick:latest
+    container_name: falco-sidekick
+    restart: unless-stopped
+    environment:
+      WEBUI_URL: http://falco-webui:2802
+    networks:
+      - falco-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f falcosidekick"]
+      <<: *default-healthcheck
+  falco-webui:
+    image: falcosecurity/falcosidekick-ui:latest
+    container_name: falco-webui
+    restart: unless-stopped
+    expose:
+      - 2802
+    depends_on:
+      - redis
+    command: ['-r', 'redis:6379', '-d']
+    networks:
+      - falco-network
+      - cloudflared
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f falcosidekick-ui"]
+      <<: *default-healthcheck
+  redis:
+    image: redis/redis-stack:latest
+    restart: unless-stopped
+    networks:
+      - falco-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+networks:
+  cloudflared:
+    external: true
+  falco-network:
+    name: falco-network
+    driver: bridge

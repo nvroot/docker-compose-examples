@@ -1,0 +1,55 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  heyform:
+    image: 'heyform/community-edition:latest'
+    volumes:
+      - 'heyform-assets:/app/static/upload'
+    depends_on:
+      mongo:
+        condition: service_healthy
+      keydb:
+        condition: service_healthy
+    environment:
+      - SERVICE_FQDN_HEYFORM_8000
+      - 'APP_HOMEPAGE_URL=${SERVICE_FQDN_HEYFORM}'
+      - 'SESSION_KEY=${SERVICE_BASE64_64_SESSION}'
+      - 'FORM_ENCRYPTION_KEY=${SERVICE_BASE64_64_FORM}'
+      - 'MONGO_URI=mongodb://mongo:27017/heyform'
+      - REDIS_HOST=keydb
+      - REDIS_PORT=6379
+      - 'REDIS_PASSWORD=${SERVICE_PASSWORD_KEYDB}'
+      - APP_DISABLE_REGISTRATION=${APP_DISABLE_REGISTRATION:-true}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'wget -qO- http://127.0.0.1:8000 || exit 1'
+      <<: *default-healthcheck
+  mongo:
+    image: 'percona/percona-server-mongodb:latest'
+    volumes:
+      - 'heyform-mongo-data:/data/db'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "echo 'ok' > /dev/null 2>&1"
+      <<: *default-healthcheck
+  keydb:
+    image: 'eqalpha/keydb:latest'
+    command: 'keydb-server --appendonly yes'
+    environment:
+      - 'KEYDB_PASSWORD=${SERVICE_PASSWORD_KEYDB}'
+    volumes:
+      - 'heyform-keydb-data:/data'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - keydb-cli
+        - '--pass'
+        - '${SERVICE_PASSWORD_KEYDB}'
+        - ping
+      <<: *default-healthcheck

@@ -1,0 +1,23 @@
+services:
+  drone-runner:
+    image: drone/drone-runner-docker:1
+    container_name: drone-runner
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DRONE_RPC_PROTO=https
+      - DRONE_RPC_HOST=drone.site.com
+      - DRONE_RPC_SECRET=super-duper-secret
+      - DRONE_RUNNER_CAPACITY=2
+      - DRONE_RUNNER_NAME=drone-runner-arm
+    expose:
+      - 3000
+    detach: true
+    healthcheck:
+      test: ["CMD", "/bin/drone-runner-docker", "--help", "exit 0"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s

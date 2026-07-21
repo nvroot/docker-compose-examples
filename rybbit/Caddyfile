@@ -1,0 +1,24 @@
+{
+    auto_https off
+}
+https://rybbit.site.com http://rybbit.site.com {
+    # Enable compression
+    encode zstd gzip
+
+    handle_path /api/* {
+        reverse_proxy rybbit-backend:3001 {
+            header_up Host {http.reverse_proxy.upstream.hostport}
+            header_up X-Real-IP {http.request.header.X-Real-IP}
+        }
+    }
+
+
+    # Proxy all other requests to the client service
+    handle {
+        reverse_proxy rybbit-client:3002 {
+            header_up Host {http.reverse_proxy.upstream.hostport}
+            header_up X-Real-IP {http.request.header.X-Real-IP}
+        }
+    }
+
+}

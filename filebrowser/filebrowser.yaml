@@ -1,0 +1,24 @@
+services:
+  filebrowser:
+    image: gtstef/filebrowser:beta
+    container_name: filebrowser
+    restart: unless-stopped
+    environment:
+      FILEBROWSER_CONFIG: "data/config.yaml"
+    expose:
+      - 80
+    volumes:
+      - ./FILES:/srv
+      - ./data:/home/filebrowser/data
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f filebrowser"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true

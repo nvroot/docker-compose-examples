@@ -1,0 +1,54 @@
+services:
+  ollama-api:
+    image: "ollama/ollama:latest"
+    container_name: ollama
+    restart: unless-stopped
+    volumes:
+      - "ollama:/root/.ollama"
+    expose:
+      - 11434
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+  open-webui:
+    image: "ghcr.io/open-webui/open-webui:main"
+    container_name: open-webui
+    restart: unless-stopped
+    volumes:
+      - "open-webui:/app/backend/data"
+    depends_on:
+      - ollama-api
+    environment:
+      - 'OLLAMA_BASE_URL=http://ollama-api:11434'
+      - 'ENABLE_SIGNUP=true'
+      - 'CORS_ALLOW_ORIGIN=https://open.site.com'
+      - 'SCARF_NO_ANALYTICS=true'
+      - 'DO_NOT_TRACK=true'
+      - 'ANONYMIZED_TELEMETRY=false'
+      - 'WEBUI_SECRET_KEY=secretkey'
+    expose:
+      - 8080
+    networks:
+      - proxy
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - "-f"
+        - "http://127.0.0.1:8080"
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+volumes:
+  ollama:
+  open-webui:
+networks:
+  proxy:
+    external: true

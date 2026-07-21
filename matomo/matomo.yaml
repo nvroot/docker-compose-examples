@@ -1,0 +1,74 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  matomo:
+    container_name: matomo
+    image: matomo:latest
+    restart: unless-stopped
+    expose:
+      - 80
+    environment:
+      - 'MATOMO_GENERAL_PROXY_CLIENT_HEADERS=HTTP_X_FORWARDED_FOR,HTTP_CLIENT_IP,HTTP_X_REAL_IP'
+      - 'MATOMO_GENERAL_PROXY_HOST_HEADERS=HTTP_X_FORWARDED_HOST,HTTP_HOST'
+      - 'MATOMO_DATABASE_HOST=matomo-db'
+      - 'MATOMO_DATABASE_PORT_NUMBER=3306'
+      - 'MATOMO_DATABASE_ADAPTER=mysql'
+      - 'MATOMO_DATABASE_TABLES_PREFIX=matomo_'
+      - 'MATOMO_DATABASE_USERNAME=matomo-user'
+      - 'MATOMO_DATABASE_PASSWORD=changeme'
+      - 'MATOMO_DATABASE_DBNAME=matomo'
+      - 'MATOMO_MAIL_ENABLED=true'
+      - 'MATOMO_MAIL_HOST=smtp.site.com'
+      - 'MATOMO_MAIL_PORT=465'
+      - 'MATOMO_MAIL_ENCRYPTION=ssl'
+      - 'MATOMO_MAIL_USERNAME=admin@site.com'
+      - 'MATOMO_MAIL_PASSWORD=mailpass'
+      - 'MATOMO_MAIL_TRANSPORT=smtp'
+      # - 'MATOMO_MARKETPLACE_TOKEN='
+      # - 'MATOMO_PLUGINS_TO_DEACTIVATE='
+      # - 'MATOMO_PLUGINS_TO_INSTALL='
+    networks:
+      - proxy
+      - matomo-network
+    volumes:
+      - matomo-data:/var/www/html
+    depends_on:
+      matomo-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/matomo.php"]
+      <<: *default-healthcheck
+  matomo-db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      - 'MYSQL_ROOT_PASSWORD=changeme'
+      - 'MYSQL_USER=matomo-user'
+      - 'MYSQL_PASSWORD=changeme'
+      - 'MYSQL_DATABASE=matomo'
+      - 'TZ=UTC'
+    command:
+      - '--character-set-server=utf8mb4'
+      - '--collation-server=utf8mb4_bin'
+      - '--max-allowed-packet=128M'
+      - '--innodb-log-file-size=64M'
+    networks:
+      - matomo-network
+    volumes:
+      - matomo-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      <<: *default-healthcheck
+networks:
+  proxy:
+    external: true
+  matomo-network:
+    name: matomo-network
+    driver: bridge
+volumes:
+  matomo-data:
+  matomo-db:

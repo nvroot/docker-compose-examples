@@ -1,0 +1,62 @@
+services:
+  rocketchat:
+    image: rocket.chat:latest
+    container_name: rocketchat
+    restart: unless-stopped
+    environment:
+      - 'MONGO_URL=mongodb://rocket-db:27017/rocketchat?replicaSet=rs0'
+      - MONGO_OPLOG_URL=mongodb://rocket-db:27017/local?replicaSet=rs0
+      - ROOT_URL=https://rocket.site.com
+      - PORT=3000
+      - DEPLOY_METHOD=docker
+      - DEPLOY_PLATFORM=linux
+      - ADMIN_USERNAME=username
+      - ADMIN_NAME=name
+      - ADMIN_PASS=passsword
+      - ADMIN_EMAIL=mail@example.com
+    networks:
+      - proxy
+      - rocket-network
+    depends_on:
+      rocket-db:
+        condition: service_healthy
+    expose:
+      - 3000
+    healthcheck:
+      test: curl -s http://127.0.0.1:9200/_cluster/health | grep -vq '"status":"red"'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  rocket-db:
+    image: docker.io/bitnami/mongodb:6.0
+    restart: unless-stopped
+    volumes:
+      - rocket-mongo:/bitnami/mongodb
+    environment:
+      - MONGODB_REPLICA_SET_MODE=primary
+      - MONGODB_REPLICA_SET_NAME=rs0
+      - MONGODB_PORT_NUMBER=27017
+      - MONGODB_INITIAL_PRIMARY_HOST=rocket-db
+      - MONGODB_INITIAL_PRIMARY_PORT_NUMBER=27017
+      - MONGODB_ADVERTISED_HOSTNAME=rocket-db
+      - MONGODB_ENABLE_JOURNAL=true
+      - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - rocket-network
+    healthcheck:
+      test: curl -s http://127.0.0.1:9200/_cluster/health | grep -vq '"status":"red"'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true
+  rocket-network:
+    name: rocket-network
+    driver: bridge
+volumes:
+  rocket-mongo:

@@ -1,0 +1,99 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  postgresql:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      <<: *default-healthcheck
+    volumes:
+      - './authentik-db:/var/lib/postgresql/data'
+    environment:
+      - 'POSTGRES_PASSWORD=changeme'
+      - 'POSTGRES_USER=dbuser'
+      - 'POSTGRES_DB=authentik'
+  redis:
+    image: redis:alpine
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      <<: *default-healthcheck
+    volumes:
+      - './authentik-redis:/data'
+  authentik-server:
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_VERSION}
+    container_name: authentik
+    restart: unless-stopped
+    command: server
+    environment:
+      - 'AUTHENTIK_REDIS__HOST=redis'
+      - 'AUTHENTIK_POSTGRESQL__HOST=postgresql'
+      - 'AUTHENTIK_POSTGRESQL__USER=dbuser'
+      - 'AUTHENTIK_POSTGRESQL__NAME=authentik'
+      - 'AUTHENTIK_POSTGRESQL__PASSWORD=changeme'
+      - 'AUTHENTIK_SECRET_KEY=secretkey'
+      - 'AUTHENTIK_ERROR_REPORTING__ENABLED=true'
+      - 'AUTHENTIK_EMAIL__HOST=smtp.site.com'
+      - 'AUTHENTIK_EMAIL__PORT=465'
+      - 'AUTHENTIK_EMAIL__USERNAME=admin@site.com'
+      - 'AUTHENTIK_EMAIL__PASSWORD=mailpass'
+      - 'AUTHENTIK_EMAIL__USE_SSL=true'
+      - 'AUTHENTIK_EMAIL__FROM=Authentik'
+      - 'AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true'
+      - 'AUTHENTIK_DISABLE_UPDATE_CHECK=true'
+      - 'AUTHENTIK_ERROR_REPORTING__ENABLED=false'
+    expose:
+      - 9000
+      - 9443
+    volumes:
+      - ./media:/media
+      - ./custom-templates:/templates
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "ak", "healthcheck"]
+      <<: *default-healthcheck
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_VERSION}
+    restart: unless-stopped
+    command: worker
+    environment:
+      - 'AUTHENTIK_REDIS__HOST=redis'
+      - 'AUTHENTIK_POSTGRESQL__HOST=postgresql'
+      - 'AUTHENTIK_POSTGRESQL__USER=dbuser'
+      - 'AUTHENTIK_POSTGRESQL__NAME=authentik'
+      - 'AUTHENTIK_POSTGRESQL__PASSWORD=changeme'
+      - 'AUTHENTIK_SECRET_KEY=secretkey'
+      - 'AUTHENTIK_ERROR_REPORTING__ENABLED=true'
+      - 'AUTHENTIK_EMAIL__HOST=smtp.site.com'
+      - 'AUTHENTIK_EMAIL__PORT=465'
+      - 'AUTHENTIK_EMAIL__USERNAME=admin@site.com'
+      - 'AUTHENTIK_EMAIL__PASSWORD=mailpass'
+      - 'AUTHENTIK_EMAIL__USE_SSL=true'
+      - 'AUTHENTIK_EMAIL__FROM=Authentik'
+      - 'AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true'
+      - 'AUTHENTIK_DISABLE_UPDATE_CHECK=true'
+      - 'AUTHENTIK_ERROR_REPORTING__ENABLED=false'
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./media:/media
+      - ./certs:/certs
+      - ./custom-templates:/templates
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "ak", "healthcheck"]
+      <<: *default-healthcheck

@@ -1,0 +1,72 @@
+services:
+  hedgedoc:
+    image: linuxserver/hedgedoc:latest
+    container_name: hedgedoc
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - CMD_DB_DIALECT=postgres
+      - CMD_DB_URL=postgres://hedgedoc-user:changeme@hedgedoc-db:5432/hedgedoc
+      - CMD_DOMAIN=md.site.com
+      - CMD_PORT=3000
+      - CMD_ALLOW_ORIGIN=['md.site.com']
+      - CMD_URL_ADDPORT=false
+      - CMD_PROTOCOL_USESSL=true
+      - CMD_EMAIL=false
+      - CMD_ALLOW_ANONYMOUS=false
+      - CMD_OAUTH2_PROVIDERNAME=Authentik
+      - CMD_OAUTH2_CLIENT_ID=clientkey
+      - CMD_OAUTH2_CLIENT_SECRET=secretkey
+      - 'CMD_OAUTH2_SCOPE=openid email profile'
+      - CMD_OAUTH2_USER_PROFILE_USERNAME_ATTR=preferred_username
+      - CMD_OAUTH2_USER_PROFILE_DISPLAY_NAME_ATTR=name
+      - CMD_OAUTH2_USER_PROFILE_EMAIL_ATTR=email
+      - 'CMD_OAUTH2_USER_PROFILE_URL=https://auth.site.com/application/o/userinfo/'
+      - 'CMD_OAUTH2_TOKEN_URL=https://auth.site.com/application/o/token/'
+      - 'CMD_OAUTH2_AUTHORIZATION_URL=https://auth.site.com/application/o/authorize/'
+    networks:
+      - proxy
+      - hedgedoc-network
+    volumes:
+      - ./config:/config
+    expose:
+      - 3000
+    depends_on:
+      hedgedoc-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  hedgedoc-db:
+    image: "postgres:17"
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=hedgedoc
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=hedgedoc-user
+      - POSTGRES_PORT=5432
+    volumes:
+      - "hedgedoc-pg:/var/lib/postgresql/data"
+    networks:
+      - hedgedoc-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+volumes:
+  hedgedoc-pg:
+networks:
+  hedgedoc-network:
+    name: hedgedoc-network
+    driver: bridge
+  proxy:
+    external: true

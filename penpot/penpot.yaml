@@ -1,0 +1,128 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  penpot-frontend:
+    image: penpotapp/frontend:latest
+    container_name: penpot-frontend
+    restart: unless-stopped
+    environment:
+      - PENPOT_PUBLIC_URI=https://ui.site.com
+      - PENPOT_FLAGS=${PENPOT_FRONTEND_FLAGS:-enable-login-with-password}
+      - PENPOT_BACKEND_URI=http://penpot-backend:6060
+      - PENPOT_EXPORTER_URI=http://penpot-exporter:6061
+    expose:
+      - 8080
+    networks:
+      - proxy
+      - penpot-network
+    volumes:
+      - penpot-assets:/opt/data/assets
+    depends_on:
+      penpot-backend:
+        condition: service_healthy
+      penpot-exporter:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://127.0.0.1:8080']
+      <<: *default-healthcheck
+
+  penpot-backend:
+    image: penpotapp/backend:latest
+    container_name: penpot-backend
+    restart: unless-stopped
+    volumes:
+      - penpot-assets:/opt/data/assets
+    environment:
+      - PENPOT_FLAGS=${PENPOT_BACKEND_FLAGS:-disable-registration enable-login disable-demo-users disable-demo-warning enable-login-with-password enable-smtp enable-log-emails enable-prepl-server disable-email-verification enable-auto-file-snapshot}
+      - PENPOT_HTTP_SERVER_PORT=6060
+      - PENPOT_SECRET_KEY= #python3 -c "import secrets; print(secrets.token_urlsafe(64))"
+      - PENPOT_PUBLIC_URI=https://ui.site.com
+      - PENPOT_BACKEND_URI=http://penpot-backend:6060
+      - PENPOT_EXPORTER_URI=http://penpot-exporter:6061
+      - PENPOT_DATABASE_URI=postgresql://penpot-db/penpot
+      - PENPOT_DATABASE_USERNAME=penpot-user
+      - PENPOT_DATABASE_PASSWORD=changeme
+      - PENPOT_REDIS_URI=redis://penpot-redis/0
+      - PENPOT_ASSETS_STORAGE_BACKEND=assets-fs
+      - PENPOT_STORAGE_ASSETS_FS_DIRECTORY=/opt/data/assets
+      - PENPOT_TELEMETRY_ENABLED=false
+      - PENPOT_AUTO_FILE_SNAPSHOT_EVERY=5
+      - PENPOT_AUTO_FILE_SNAPSHOT_TIIMEOUT=1h
+      - 'PENPOT_SMTP_DEFAULT_REPLY_TO=Penpot <no-reply@site.ch>'
+      - 'PENPOT_SMTP_DEFAULT_FROM=Penpot <no-reply@site.ch>'
+      - PENPOT_SMTP_HOST=smtp.site.com
+      - PENPOT_SMTP_PORT=465
+      - PENPOT_SMTP_USERNAME=admin@site.com
+      - PENPOT_SMTP_PASSWORD=mailpass
+      - PENPOT_SMTP_TLS=false
+      - PENPOT_SMTP_SSL=true
+    networks:
+      - proxy
+      - penpot-network
+    depends_on:
+      penpot-db:
+        condition: service_healthy
+      penpot-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'pgrep', '-f', 'java']
+      <<: *default-healthcheck
+
+  penpot-exporter:
+    image: penpotapp/exporter:latest
+    container_name: penpot-exporter
+    restart: unless-stopped
+    environment:
+      - PENPOT_PUBLIC_URI=https://ui.site.com
+      - PENPOT_REDIS_URI=redis://penpot-redis/0
+    expose:
+      - 6061
+    networks:
+      - penpot-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://127.0.0.1:6061/readyz']
+      <<: *default-healthcheck
+
+  penpot-db:
+    image: postgres:17-alpine
+    container_name: penpot-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_INITDB_ARGS=--data-checksums
+      - POSTGRES_USER=penpot-user
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=penpot
+      - POSTGRES_PORT=5432
+    networks:
+      - penpot-network
+    volumes:
+      - penpot-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      <<: *default-healthcheck
+
+  penpot-redis:
+    image: redis:latest
+    container_name: penpot-redis
+    restart: unless-stopped
+    networks:
+      - penpot-network
+    volumes:
+      - penpot-redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      <<: *default-healthcheck
+networks:
+  proxy:
+    external: true
+  penpot-network:
+    name: penpot-network
+    driver: bridge
+volumes:
+  penpot-assets:
+  penpot-pg:
+  penpot-redis:

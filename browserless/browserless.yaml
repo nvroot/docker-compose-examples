@@ -1,0 +1,21 @@
+services:
+  browserless:
+    image: ghcr.io/browserless/chromium:latest
+    container_name: browserless
+    restart: unless-stopped
+    environment:
+      - TOKEN=browserless-base64-token
+    expose:
+      - 3000
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/docs"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true

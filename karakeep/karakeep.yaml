@@ -1,0 +1,66 @@
+services:
+  web:
+    image: ghcr.io/karakeep-app/karakeep:release
+    container_name: karakeep
+    restart: unless-stopped
+    volumes:
+      - 'karakeep-data:/data'
+    networks:
+      - karakeep-network
+    environment:
+      - 'NEXTAUTH_SECRET=nextauthkey'
+      - 'MEILI_MASTER_KEY=meilimasterkey'
+      - 'NEXTAUTH_URL=https://bookmark.example.com'
+      - 'MEILI_ADDR=http://meilisearch:7700'
+      - 'BROWSER_WEB_URL=http://chrome:9222'
+      - DATA_DIR=/data
+      - DISABLE_SIGNUPS=true
+  chrome:
+    image: 'gcr.io/zenika-hub/alpine-chrome:124'
+    restart: unless-stopped
+    command:
+      - '--no-sandbox'
+      - '--disable-gpu'
+      - '--disable-dev-shm-usage'
+      - '--remote-debugging-address=0.0.0.0'
+      - '--remote-debugging-port=9222'
+      - '--hide-scrollbars'
+    networks:
+      - karakeep-network
+    healthcheck:
+      test: ["CMD-SHELL", "/bin/sh -c 'wget -qO- http://127.0.0.1:9222/'"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  meilisearch:
+    image: 'getmeili/meilisearch:v1.13.3'
+    restart: unless-stopped
+    environment:
+      - 'MEILI_NO_ANALYTICS=true'
+      - 'NEXTAUTH_SECRET=nextauthkey'
+      - 'MEILI_MASTER_KEY=meilimasterkey'
+      - 'NEXTAUTH_URL=https://bookmark.example.com'
+    networks:
+      - karakeep-network
+    volumes:
+      - 'karakeep-meilisearch:/meili_data'
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - 'http://127.0.0.1:7700/health'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  karakeep-network:
+    name: karakeep-network
+    driver: bridge
+volumes:
+  karakeep-data:
+  karakeep-meilisearch:

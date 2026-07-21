@@ -1,0 +1,25 @@
+services:
+  reposilite:
+    image: dzikoysk/reposilite:3.2.0
+    container_name: reposilite
+    restart: unless-stopped
+    expose:
+      - 8080
+    environment:
+      - PUID=999
+      - PGID=999
+      - PORT=8080
+      - 'JAVA_OPTS=-Xmx128M'
+      # - 'REPOSILITE_OPTS=--port 8080'
+      - 'REPOSILITE_OPTS=--port 8080 --token admin:token' # First RUN
+    networks:
+      - proxy
+    volumes:
+      - reposilite-data:/app/data
+    stdin_open: true
+    tty: true
+networks:
+  proxy:
+    external: true
+volumes:
+  reposilite-data: {}

@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mysql:9
+    restart: unless-stopped
+    environment:
+      - 'MYSQL_ROOT_PASSWORD=changeme'
+      - 'MYSQL_DATABASE=bugsink'
+      - 'MYSQL_USER=bugsink-user'
+      - 'MYSQL_PASSWORD=changeme'
+    volumes:
+      - bugsink-mysql:/var/lib/mysql
+    networks:
+      - bugsink-network
+    healthcheck:
+      test: ["CMD-SHELL", "exit | mysql -h localhost -P 3306 -u root -p$$MYSQL_ROOT_PASSWORD" ]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  bugsink:
+    image: bugsink/bugsink
+    container_name: bugsink
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    expose:
+      - "8000"
+    environment:
+      - 'BEHIND_HTTPS_PROXY=true'
+      - 'SECRET_KEY=minimum-50-character'
+      - 'CREATE_SUPERUSER=admin:admin'
+      - PORT=8000
+      - 'DATABASE_URL=mysql://bugsink-user:changeme@mysql:3306/bugsink'
+      - 'ALLOWED_HOSTS=bug.site.com'
+      - 'SENTRY_URL_PREFIX=https://bug.site.com'
+      - 'BASE_URL=https://bug.site.com'
+    networks:
+      - bugsink-network
+      - proxy
+    healthcheck:
+      test: ["CMD", "echo", "healthcheck"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  bugsink-network:
+    name: bugsink-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  bugsink-mysql:

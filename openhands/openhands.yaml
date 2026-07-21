@@ -1,0 +1,28 @@
+services:
+  openhands:
+    image: ghcr.io/all-hands-ai/openhands:0.41
+    container_name: openhands
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    pull_policy: always
+    environment:
+      - SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik
+      - LOG_ALL_EVENTS=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./.openhands-state:/.openhands-state
+    expose:
+      - 3000
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f openhands"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true

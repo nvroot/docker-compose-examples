@@ -1,0 +1,65 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+services:
+  passbolt:
+    image: passbolt/passbolt:latest-ce
+    container_name: passbolt
+    restart: unless-stopped
+    environment:
+      - APP_FULL_BASE_URL=https://pass.site.com
+      - DATASOURCES_DEFAULT_HOST=passbolt-mariadb
+      - DATASOURCES_DEFAULT_USERNAME=passbolt-user
+      - DATASOURCES_DEFAULT_PASSWORD=changeme
+      - DATASOURCES_DEFAULT_DATABASE=passbolt-db
+    volumes:
+      - "passbolt-gpg:/etc/passbolt/gpg"
+      - "passbolt-jwt:/etc/passbolt/jwt"
+    networks:
+      - passbolt-network
+      - proxy
+    command:
+      - /usr/bin/wait-for.sh
+      - "-t"
+      - "0"
+      - "passbolt-mariadb:3306"
+      - "--"
+      - /docker-entrypoint.sh
+    depends_on:
+      passbolt-mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80"]
+      <<: *default-healthcheck
+
+  passbolt-mariadb:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=changeme
+      - MARIADB_DATABASE=passbolt-db
+      - MARIADB_USER=passbolt-user
+      - MARIADB_PASSWORD=changeme
+    networks:
+      - passbolt-network
+    volumes:
+      - passbolt-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      <<: *default-healthcheck
+networks:
+  proxy:
+    external: true
+  passbolt-network:
+    name: passbolt-network
+    driver: bridge
+volumes:
+  passbolt-gpg:
+    driver: local
+  passbolt-jwt:
+    driver: local
+  passbolt-db:
+    driver: local

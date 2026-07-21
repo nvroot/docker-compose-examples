@@ -1,0 +1,23 @@
+services:
+  cloudbeaver:
+    image: 'dbeaver/cloudbeaver:latest'
+    container_name: cloudbeaver
+    restart: unless-stopped
+    volumes:
+      - 'cloudbeaver-data:/opt/cloudbeaver/workspace'
+    expose:
+      - 8978
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8978/"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true
+volumes:
+  cloudbeaver-data:

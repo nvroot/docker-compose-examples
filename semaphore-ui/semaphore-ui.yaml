@@ -1,0 +1,64 @@
+services:
+  semaphore-db:
+    image: 'postgres:17'
+    restart: unless-stopped
+    environment:
+      - 'POSTGRES_USER=semaphore-user'
+      - 'POSTGRES_PASSWORD=changeme'
+      - 'POSTGRES_DB=semaphore'
+    volumes:
+      - 'semaphore-pg:/var/lib/postgresql/data'
+    networks:
+      - semaphore-network
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -h localhost -U $${POSTGRES_USER} -d $${POSTGRES_DB}'
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+  semaphore:
+    image: 'semaphoreui/semaphore:latest'
+    restart: unless-stopped
+    environment:
+      - SEMAPHORE_DB_DIALECT=postgres
+      - SEMAPHORE_DB_HOST=semaphore-db
+      - 'SEMAPHORE_DB_NAME=semaphore'
+      - 'SEMAPHORE_DB_USER=semaphore-user'
+      - 'SEMAPHORE_DB_PASS=changeme'
+      - 'SEMAPHORE_ADMIN=admin'
+      - 'SEMAPHORE_ADMIN_PASSWORD=password'
+      - 'SEMAPHORE_ADMIN_NAME=admin'
+      - 'SEMAPHORE_ADMIN_EMAIL=admin@example.com'
+    expose:
+      - 3000
+    networks:
+      - semaphore-network
+      - proxy
+    volumes:
+      - 'semaphore-data:/var/lib/semaphore'
+      - 'semaphore-config:/etc/semaphore'
+      - 'semaphore-tmp:/tmp/semaphore'
+    depends_on:
+      semaphore-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  semaphore-network:
+    name: semaphore-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  semaphore-pg:
+  semaphore-data:
+  semaphore-config:
+  semaphore-tmp:

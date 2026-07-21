@@ -1,0 +1,82 @@
+x-default-healthcheck: &default-healthcheck
+  interval: 60s
+  timeout: 20s
+  retries: 5
+  start_period: 60s
+  start_interval: 5s
+
+services:
+  nango-db:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - nango-pg:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=nango
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=nango-user
+      - POSTGRES_PORT=5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <<: *default-healthcheck
+    networks:
+      - nango-network
+  nango-redis:
+    image: redis:alpine
+    restart: unless-stopped
+    command: --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *default-healthcheck
+    volumes:
+      - nango-redis:/data
+    networks:
+      - nango-network
+  nango-server:
+    image: nangohq/nango-server:hosted
+    container_name: nango-server
+    restart: unless-stopped
+    platform: linux/amd64
+    environment:
+      - NANGO_ENCRYPTION_KEY=encryptionkey           # openssl rand -base64 32
+      - NANGO_DB_USER=nango-user
+      - NANGO_DB_PASSWORD=changeme
+      - NANGO_DB_HOST=nango-db
+      - NANGO_DB_NAME=nango
+      - NANGO_DB_SSL=false
+      - RECORDS_DATABASE_URL=postgresql://nango-user:changeme@nango-db:5432/nango
+      - NANGO_REDIS_URL=http://nango-redis:6379
+      - SERVER_PORT=3003
+      - CSP_REPORT_ONLY=true
+      - NANGO_SERVER_URL=http://localhost:3003
+      - NANGO_PUBLIC_SERVER_URL=http://localhost:3000
+      - FLAG_AUTH_ENABLED=false
+      - NANGO_DASHBOARD_USERNAME=
+      - NANGO_DASHBOARD_PASSWORD=
+      - LOG_LEVEL=info
+      - TELEMETRY=false
+      - NANGO_SERVER_WEBSOCKETS_PATH
+      - NANGO_LOGS_ENABLED=false
+      - FLAG_SERVE_CONNECT_UI=true
+    # volumes:
+    #   - './packages/providers/providers.yaml:/usr/nango-server/src/packages/providers/providers.yaml'
+    expose:
+      - ${SERVER_PORT:-3003}
+      - ${CONNECT_UI_PORT:-3009}
+    depends_on:
+      - nango-db
+    networks:
+      - nango-network
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/local/bin/node -v"]
+      <<: *default-healthcheck
+networks:
+  nango-network:
+    name: nango-network
+    driver: bridge
+  proxy:
+    external: true
+volumes:
+  nango-pg:
+  nango-redis:

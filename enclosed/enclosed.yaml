@@ -1,0 +1,25 @@
+services:
+  enclosed:
+    image: corentinth/enclosed:latest-rootless
+    container_name: enclosed
+    restart: unless-stopped
+    expose:
+      - 8787
+    environment:
+      - PUBLIC_VIEW_NOTE_PATH_PREFIX=n
+    volumes:
+      - enclosed-data:/app/.data
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8787/"]
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true
+volumes:
+  enclosed-data:

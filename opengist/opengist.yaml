@@ -1,0 +1,31 @@
+services:
+  opengist:
+    image: ghcr.io/thomiceli/opengist:latest
+    container_name: opengist
+    restart: unless-stopped
+    environment:
+      - UID=1001
+      - GID=1001
+      - OG_LOG_LEVEL=info
+      - OG_DB_URI=opengist.db
+      - OG_SQLITE_JOURNAL_MODE=WAL
+      - OG_OIDC_CLIENT_KEY=clientkey # changeme
+      - OG_OIDC_SECRET=cliensecret # changeme
+      - OG_OIDC_DISCOVERY_URL=https://auth.site.com/application/o/opengist/.well-known/openid-configuration
+      # callback_url: http://site.de/oauth/openid-connect/callback
+      - OG_CUSTOM_LOGO=logo-dark.svg  
+      - OG_CUSTOM_FAVICON=logo-dark.svg  
+      - OG_CUSTOM_NAME="Gists"  
+      - OG_INDEX_ENABLED=true  
+    expose:
+      - 6157 # HTTP port
+      - 2222 # SSH port, can be removed if you don't use SSH
+    volumes:
+      - opengist-data:/opengist
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
+volumes:
+  opengist-data:
