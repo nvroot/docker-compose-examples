@@ -29,7 +29,7 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     volumes:
-      - ryot-pg:/var/lib/postgresql/data
+      - ryot-pg:/var/lib/postgresql
     environment:
       - 'POSTGRES_USER=ryot-user'
       - 'POSTGRES_PASSWORD=changeme'

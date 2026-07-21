@@ -39,7 +39,7 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     volumes:
-      - n8n-db:/var/lib/postgresql/data
+      - n8n-db:/var/lib/postgresql
     environment:
       - POSTGRES_USER=n8n
       - POSTGRES_PASSWORD=changeme
