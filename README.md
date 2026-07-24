@@ -206,7 +206,7 @@
 | <img src="./logo/bugsink.svg" width="32" height="32"> | [bugsink](./bugsink/) | Self-hosted error tracking and crash reporting | 8000 |
 | <img src="./logo/akto.svg" width="32" height="32"> | [akto](./akto/) | Open-source API security testing platform with automated vulnerability detection and traffic analysis | 8080 |
 | <img src="./logo/canarytokens.svg" width="32" height="32"> | [canarytokens](./canarytokens/) | Free canary tokens and honeypots for detecting unauthorized access and data breaches | 8083 |
-| <img src="./logo/cyberchef.svg" width="32" height="32"> | [cyberchef](./cyberchef/) | Cyber Swiss Army Knife for encryption, encoding, and data analysis | 80 |
+| <img src="./logo/cyberchef.svg" width="32" height="32"> | [cyberchef](./cyberchef/) | Cyber Swiss Army Knife for encryption, encoding, and data analysis | 8080 |
 | <img src="./logo/defectdojo.svg" width="32" height="32"> | [defectdojo](./defectdojo/) | Application vulnerability correlation and security orchestration platform | 8080 |
 | <img src="./logo/faraday.svg" width="32" height="32"> | [faraday](./faraday/) | Open Source Vulnerability Management Platform | 5985 |
 | <img src="./logo/ivre.svg" width="32" height="32"> | [ivre](./ivre/) | Network recon framework for passive and active intelligence gathering | 80 |

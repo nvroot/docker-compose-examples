@@ -13,4 +13,4 @@
 | **Docs** |    &nbsp;    |
 | **Registry** |    https://ghcr.io/gchq/cyberchef:latest   |
 | **Source&nbsp;Code&nbsp;** |   https://github.com/gchq/CyberChef/  |
-| **Port** |    80   |
+| **Port** |    8080   |
