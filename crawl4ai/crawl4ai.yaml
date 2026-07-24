@@ -1,19 +1,14 @@
-x-default-healthcheck: &default-healthcheck
-  interval: 60s
-  timeout: 20s
-  retries: 5
-  start_period: 60s
-  start_interval: 5s
 services:
   crawl4ai:
     image: ${IMAGE:-unclecode/crawl4ai:${TAG:-latest}}
     container_name: crawl4ai
     restart: unless-stopped
     user: "appuser"
+    memswap_limit: 5G
+    mem_limit: 2G
+    mem_reservation: 1G
     expose:
       - 11235
-    env_file:
-      - .llm.env
     environment:
       - CRAWL4AI_API_TOKEN=yourtoken
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
@@ -23,14 +18,33 @@ services:
       - TOGETHER_API_KEY=${TOGETHER_API_KEY:-}
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
       - GEMINI_API_TOKEN=${GEMINI_API_TOKEN:-}
+      - CRAWL4AI_API_TOKEN=CHANGEME # CHANGEME for auth on /dashboard and /playground
     volumes:
-      - /dev/shm:/dev/shm  # Chromium performance
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-        reservations:
-          memory: 1G
+      - /dev/shm:/dev/shm  # Chromium performane
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 512
+    # Read-only root filesystem; only these paths are writable (tmpfs).
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/lib/redis:uid=999,gid=999,mode=0700
+      - /var/lib/crawl4ai/outputs:uid=999,gid=999,mode=0700
+      - /home/appuser/.crawl4ai:uid=999,gid=999,mode=0700
+      # Keep the baked Playwright browser under ~/.cache/ms-playwright visible.
+      - /home/appuser/.cache/url_seeder:uid=999,gid=999,mode=0700
+      - /home/appuser/.gunicorn:uid=999,gid=999,mode=0700
+    networks:
+      - proxy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11235/health"]
-      <<: *default-healthcheck
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+      start_interval: 5s
+networks:
+  proxy:
+    external: true
